@@ -3452,6 +3452,7 @@ GameObject:
   - component: {fileID: 848952969}
   - component: {fileID: 848952971}
   - component: {fileID: 848952970}
+  - component: {fileID: 848952972}
   m_Layer: 5
   m_Name: NintendoGraph
   m_TagString: Untagged
@@ -3491,7 +3492,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -3516,6 +3517,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 848952968}
   m_CullTransparentMesh: 1
+--- !u!114 &848952972
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 848952968}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a556b7fe09c819469aa9a251e8ae537, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MiniStockChartRenderer
+  lineWidth: 4
 --- !u!1 &852226843
 GameObject:
   m_ObjectHideFlags: 0
@@ -3998,6 +4012,7 @@ GameObject:
   - component: {fileID: 923473420}
   - component: {fileID: 923473422}
   - component: {fileID: 923473421}
+  - component: {fileID: 923473423}
   m_Layer: 5
   m_Name: ToyotaGraph
   m_TagString: Untagged
@@ -4037,7 +4052,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -4062,6 +4077,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 923473419}
   m_CullTransparentMesh: 1
+--- !u!114 &923473423
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 923473419}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a556b7fe09c819469aa9a251e8ae537, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MiniStockChartRenderer
+  lineWidth: 4
 --- !u!1 &957844115
 GameObject:
   m_ObjectHideFlags: 0
@@ -4422,6 +4450,7 @@ GameObject:
   - component: {fileID: 1030430794}
   - component: {fileID: 1030430796}
   - component: {fileID: 1030430795}
+  - component: {fileID: 1030430797}
   m_Layer: 5
   m_Name: MarketPane1
   m_TagString: Untagged
@@ -4490,6 +4519,27 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1030430793}
   m_CullTransparentMesh: 1
+--- !u!114 &1030430797
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1030430793}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 08b283bdbc973f34984a907c50e0d493, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MarketPanelController
+  toyotaPrice: {fileID: 334845570}
+  toyotaChange: {fileID: 1863479303}
+  toyotaGraph: {fileID: 923473423}
+  nintendoPrice: {fileID: 1018666670}
+  nintendoChange: {fileID: 1988891019}
+  nintendoGraph: {fileID: 848952972}
+  sonyPrice: {fileID: 203866965}
+  sonyChange: {fileID: 241673836}
+  sonyGraph: {fileID: 1843152126}
 --- !u!1 &1049544238
 GameObject:
   m_ObjectHideFlags: 0
@@ -7697,6 +7747,7 @@ GameObject:
   - component: {fileID: 1843152123}
   - component: {fileID: 1843152125}
   - component: {fileID: 1843152124}
+  - component: {fileID: 1843152126}
   m_Layer: 5
   m_Name: SonyGraph
   m_TagString: Untagged
@@ -7736,7 +7787,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -7761,6 +7812,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1843152122}
   m_CullTransparentMesh: 1
+--- !u!114 &1843152126
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1843152122}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a556b7fe09c819469aa9a251e8ae537, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MiniStockChartRenderer
+  lineWidth: 4
 --- !u!1 &1863479301
 GameObject:
   m_ObjectHideFlags: 0

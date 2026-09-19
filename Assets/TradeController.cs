@@ -1,40 +1,32 @@
 ﻿using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class TradeController : MonoBehaviour
 {
-    // テキスト
+    [Header("注文")]
     public TMP_Text quantityText;
     public TMP_Text estimatedPriceText;
     public TMP_Text buyingPowerText;
 
+    [Header("選択中の企業")]
     public TMP_Text selectedStockNameText;
-    public TMP_Text selectedStockPriceText;
+    public TMP_Text companyDescriptionText;
 
-    // チャート表示
-    public Image priceChartImage;
-
-    // 各銘柄のチャート画像
-    public Sprite toyotaChart;
-    public Sprite sonyChart;
-    public Sprite nintendoChart;
-    public Sprite mufgChart;
-    public Sprite keyenceChart;
-
-    // 初期値
     private int quantity = 100;
-    private int stockPrice = 3245;
+    private int stockPrice = 0;
     private int buyingPower = 1024500;
 
-    // ＋
+
+    // =========================
+    // 注文株数
+    // =========================
+
     public void IncreaseQuantity()
     {
         quantity += 10;
         UpdateQuantityText();
     }
 
-    // −
     public void DecreaseQuantity()
     {
         quantity -= 10;
@@ -47,35 +39,39 @@ public class TradeController : MonoBehaviour
         UpdateQuantityText();
     }
 
-    // +10株
     public void Add10()
     {
         quantity += 10;
         UpdateQuantityText();
     }
 
-    // +50株
     public void Add50()
     {
         quantity += 50;
         UpdateQuantityText();
     }
 
-    // +100株
     public void Add100()
     {
         quantity += 100;
         UpdateQuantityText();
     }
 
-    // 最大
     public void SetMax()
     {
-        quantity = 1000;
+        if (stockPrice > 0)
+        {
+            quantity = buyingPower / stockPrice;
+        }
+
         UpdateQuantityText();
     }
 
+
+    // =========================
     // 購入
+    // =========================
+
     public void BuyStock()
     {
         int totalPrice = stockPrice * quantity;
@@ -84,12 +80,19 @@ public class TradeController : MonoBehaviour
         {
             buyingPower -= totalPrice;
 
-            buyingPowerText.text =
-                "¥" + buyingPower.ToString("N0");
+            if (buyingPowerText != null)
+            {
+                buyingPowerText.text =
+                    buyingPower.ToString("N0");
+            }
         }
     }
 
-    // トヨタ
+
+    // =========================
+    // トヨタ自動車
+    // =========================
+
     public void SelectToyota()
     {
         stockPrice = 3245;
@@ -98,15 +101,18 @@ public class TradeController : MonoBehaviour
         selectedStockNameText.text =
             "トヨタ自動車（7203）";
 
-        selectedStockPriceText.text =
-            "¥3,245\n+2.36%";
-
-        priceChartImage.sprite = toyotaChart;
+        companyDescriptionText.text =
+            "トヨタ自動車は、自動車の開発・生産・販売を行う企業です。\n\n" +
+            "乗用車をはじめ、さまざまな車両を世界各地で展開しています。";
 
         UpdateQuantityText();
     }
 
-    // ソニー
+
+    // =========================
+    // ソニーグループ
+    // =========================
+
     public void SelectSony()
     {
         stockPrice = 3512;
@@ -115,15 +121,19 @@ public class TradeController : MonoBehaviour
         selectedStockNameText.text =
             "ソニーグループ（6758）";
 
-        selectedStockPriceText.text =
-            "¥3,512\n+1.21%";
-
-        priceChartImage.sprite = sonyChart;
+        companyDescriptionText.text =
+            "ソニーグループは、ゲーム、音楽、映画、エレクトロニクスなど、" +
+            "幅広い事業を展開する企業です。\n\n" +
+            "PlayStationなどのゲーム事業も展開しています。";
 
         UpdateQuantityText();
     }
 
+
+    // =========================
     // 任天堂
+    // =========================
+
     public void SelectNintendo()
     {
         stockPrice = 7820;
@@ -132,15 +142,19 @@ public class TradeController : MonoBehaviour
         selectedStockNameText.text =
             "任天堂（7974）";
 
-        selectedStockPriceText.text =
-            "¥7,820\n-0.81%";
-
-        priceChartImage.sprite = nintendoChart;
+        companyDescriptionText.text =
+            "任天堂は、ゲーム機やゲームソフトの開発・販売を行う企業です。\n\n" +
+            "Nintendo Switchやマリオなど、" +
+            "世界的に知られる製品やキャラクターを展開しています。";
 
         UpdateQuantityText();
     }
 
-    // 三菱UFJ
+
+    // =========================
+    // 三菱UFJフィナンシャル・グループ
+    // =========================
+
     public void SelectMufg()
     {
         stockPrice = 1567;
@@ -149,15 +163,19 @@ public class TradeController : MonoBehaviour
         selectedStockNameText.text =
             "三菱UFJ FG（8306）";
 
-        selectedStockPriceText.text =
-            "¥1,567\n+0.45%";
-
-        priceChartImage.sprite = mufgChart;
+        companyDescriptionText.text =
+            "三菱UFJフィナンシャル・グループは、" +
+            "銀行を中心に金融サービスを展開する企業グループです。\n\n" +
+            "銀行、信託、証券など幅広い金融事業を行っています。";
 
         UpdateQuantityText();
     }
 
+
+    // =========================
     // キーエンス
+    // =========================
+
     public void SelectKeyence()
     {
         stockPrice = 69250;
@@ -166,22 +184,43 @@ public class TradeController : MonoBehaviour
         selectedStockNameText.text =
             "キーエンス（6861）";
 
-        selectedStockPriceText.text =
-            "¥69,250\n+0.92%";
-
-        priceChartImage.sprite = keyenceChart;
+        companyDescriptionText.text =
+            "キーエンスは、工場の自動化などに使用される" +
+            "センサや測定機器などを開発・販売する企業です。\n\n" +
+            "製造現場の自動化や効率化を支える製品を展開しています。";
 
         UpdateQuantityText();
     }
 
-    // 数量と予想購入金額の更新
+
+    // =========================
+    // APIから取得した株価を反映
+    // =========================
+
+    public void SetStockPrice(float newPrice)
+    {
+        stockPrice = Mathf.RoundToInt(newPrice);
+        UpdateQuantityText();
+    }
+
+
+    // =========================
+    // 注文表示更新
+    // =========================
+
     private void UpdateQuantityText()
     {
-        quantityText.text = quantity + "株";
+        if (quantityText != null)
+        {
+            quantityText.text = quantity + "株";
+        }
 
         int totalPrice = stockPrice * quantity;
 
-        estimatedPriceText.text =
-            "¥" + totalPrice.ToString("N0");
+        if (estimatedPriceText != null)
+        {
+            estimatedPriceText.text =
+                totalPrice.ToString("N0");
+        }
     }
 }
