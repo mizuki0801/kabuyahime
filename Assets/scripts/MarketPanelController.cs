@@ -20,6 +20,9 @@ public class MarketPanelController : MonoBehaviour
     public TMP_Text sonyChange;
     public MiniStockChartRenderer sonyGraph;
 
+    [Header("更新時刻")]
+    public TMP_Text lastUpdateText;
+
     private string quoteBaseUrl =
         "http://localhost:8000/api/v1/quotes/";
 
@@ -28,6 +31,12 @@ public class MarketPanelController : MonoBehaviour
 
     void Start()
     {
+        // API取得前は時刻を未取得表示
+        if (lastUpdateText != null)
+        {
+            lastUpdateText.text = "--:--";
+        }
+
         // 現在株価・騰落率
         StartCoroutine(
             GetStockData("7203", toyotaPrice, toyotaChange)
@@ -55,9 +64,9 @@ public class MarketPanelController : MonoBehaviour
         );
     }
 
-    // =========================
+    // ==========================================
     // 現在株価・騰落率
-    // =========================
+    // ==========================================
     private IEnumerator GetStockData(
         string ticker,
         TMP_Text priceText,
@@ -77,12 +86,14 @@ public class MarketPanelController : MonoBehaviour
                         request.downloadHandler.text
                     );
 
+                // 株価
                 if (priceText != null)
                 {
                     priceText.text =
                         "¥" + data.price.ToString("N0");
                 }
 
+                // 騰落率
                 if (changeText != null)
                 {
                     changeText.text =
@@ -107,6 +118,9 @@ public class MarketPanelController : MonoBehaviour
                     }
                 }
 
+                // API取得に成功した時刻
+                UpdateLastUpdateTime();
+
                 Debug.Log(
                     ticker +
                     " 市場データ取得成功：" +
@@ -127,9 +141,9 @@ public class MarketPanelController : MonoBehaviour
         }
     }
 
-    // =========================
+    // ==========================================
     // ミニグラフ
-    // =========================
+    // ==========================================
     private IEnumerator GetMiniChart(
         string ticker,
         MiniStockChartRenderer graph
@@ -139,7 +153,9 @@ public class MarketPanelController : MonoBehaviour
             System.DateTime.Now.ToString("yyyy-MM-dd");
 
         string startDate =
-            System.DateTime.Now.AddDays(-1).ToString("yyyy-MM-dd");
+            System.DateTime.Now
+                .AddDays(-1)
+                .ToString("yyyy-MM-dd");
 
         string apiUrl =
             historyBaseUrl +
@@ -170,7 +186,8 @@ public class MarketPanelController : MonoBehaviour
 
                     for (int i = 0; i < data.bars.Length; i++)
                     {
-                        prices[i] = data.bars[i].close;
+                        prices[i] =
+                            data.bars[i].close;
                     }
 
                     if (graph != null)
@@ -203,8 +220,25 @@ public class MarketPanelController : MonoBehaviour
             }
         }
     }
+
+    // ==========================================
+    // 更新時刻
+    // ==========================================
+    private void UpdateLastUpdateTime()
+    {
+        if (lastUpdateText != null)
+        {
+            // 「最終更新」は付けず、時刻だけ表示
+            lastUpdateText.text =
+                System.DateTime.Now.ToString("HH:mm");
+        }
+    }
 }
 
+
+// ==========================================
+// 現在株価API
+// ==========================================
 [System.Serializable]
 public class MarketStockData
 {
@@ -216,6 +250,10 @@ public class MarketStockData
     public float change_percent;
 }
 
+
+// ==========================================
+// 履歴API
+// ==========================================
 [System.Serializable]
 public class MarketHistoryData
 {
@@ -226,14 +264,17 @@ public class MarketHistoryData
     public MarketHistoryBar[] bars;
 }
 
+
 [System.Serializable]
 public class MarketHistoryBar
 {
     public string ts;
     public string date;
+
     public float open;
     public float high;
     public float low;
     public float close;
+
     public long volume;
 }
