@@ -12,31 +12,165 @@ public class LiveCommentController : MonoBehaviour
     [SerializeField] private RectTransform commentContent;
     [SerializeField] private TMP_Text commentPrefab;
 
+    [Header("User Settings")]
+    [SerializeField] private string userName = "あなた";
+
+    [Header("AI Character")]
+    [SerializeField] private string aiCharacterName = "博多香";
+
+    [Header("Test Settings")]
+    [SerializeField] private bool enableTestAIReply = false;
+
+    [Header("SuperChat")]
+    [SerializeField] private RectTransform giftGrid;
+    [SerializeField] private Color selectedGiftColor =
+        new Color(1f, 0.82f, 0.35f, 1f);
+
+    [Header("Coin Settings")]
+    [SerializeField, Min(0)] private int initialCoins = 10000;
+    [SerializeField] private TMP_Text coinBalanceText;
+    [SerializeField] private TMP_Text selectedGiftPriceText;
+
+    [Header("Gift Prices (GiftGrid Order)")]
+    [SerializeField] private int[] giftPrices =
+    {
+        10, 30, 50, 100, 200, 500,
+        1000, 2000, 3000, 5000, 8000, 10000
+    };
+
     [Header("Settings")]
     [SerializeField] private int maxComments = 30;
 
-    [Header("Comment Colors")]
-    [SerializeField] private Color32 userNameColor =
-        new Color32(233, 183, 90, 255);
-
-    [SerializeField] private Color32 aiNameColor =
-        new Color32(247, 179, 200, 255);
-
-    [SerializeField] private Color32 messageColor =
-        new Color32(255, 255, 255, 255);
-
-    [Header("AI Character")]
-    [SerializeField] private string aiCharacterName = "麺田　食子";
-
-    [Header("Test Settings")]
-    [SerializeField] private bool enableTestAIReply = true;
-
     private readonly Queue<GameObject> comments = new();
+    private readonly List<Button> giftButtons = new();
+    private readonly Dictionary<Button, Color> originalColors = new();
+
+    private Button selectedGift;
+    private int selectedGiftIndex = -1;
+    private int currentCoins;
 
     private void Start()
     {
-        sendButton.onClick.AddListener(SendComment);
-        commentInput.onSubmit.AddListener(OnSubmit);
+        currentCoins = Mathf.Max(0, initialCoins);
+        UpdateCoinUI();
+
+        if (sendButton != null)
+            sendButton.onClick.AddListener(SendComment);
+
+        if (commentInput != null)
+            commentInput.onSubmit.AddListener(OnSubmit);
+
+        SetupGiftButtons();
+    }
+
+    private void SetupGiftButtons()
+    {
+        if (giftGrid == null)
+        {
+            Debug.LogWarning("GiftGridが未設定です。");
+            return;
+        }
+
+        if (giftPrices == null ||
+            giftPrices.Length != giftGrid.childCount)
+        {
+            Debug.LogWarning(
+                "ギフト数と価格設定の数が一致していません。"
+            );
+        }
+
+        for (int i = 0; i < giftGrid.childCount; i++)
+        {
+            Button button = giftGrid.GetChild(i).GetComponent<Button>();
+
+            if (button == null)
+                continue;
+
+            giftButtons.Add(button);
+
+            Image image = button.GetComponent<Image>();
+
+            if (image != null)
+                originalColors[button] = image.color;
+
+            Button currentButton = button;
+            int currentIndex = i;
+
+            button.onClick.AddListener(
+                () => SelectGift(currentButton, currentIndex)
+            );
+        }
+    }
+
+    private void SelectGift(Button button, int index)
+    {
+        if (selectedGift == button)
+        {
+            ClearGiftSelection();
+            return;
+        }
+
+        ClearGiftSelection();
+
+        selectedGift = button;
+        selectedGiftIndex = index;
+
+        Image image = button.GetComponent<Image>();
+
+        if (image != null)
+            image.color = selectedGiftColor;
+
+        UpdateCoinUI();
+    }
+
+    private void ClearGiftSelection()
+    {
+        if (selectedGift != null)
+        {
+            Image image = selectedGift.GetComponent<Image>();
+
+            if (image != null &&
+                originalColors.TryGetValue(selectedGift, out Color color))
+            {
+                image.color = color;
+            }
+        }
+
+        selectedGift = null;
+        selectedGiftIndex = -1;
+
+        UpdateCoinUI();
+    }
+
+    private int GetGiftPrice(int index)
+    {
+        if (giftPrices == null ||
+            index < 0 ||
+            index >= giftPrices.Length)
+        {
+            return -1;
+        }
+
+        return giftPrices[index];
+    }
+
+    private void UpdateCoinUI()
+    {
+        if (coinBalanceText != null)
+        {
+            coinBalanceText.text =
+                currentCoins.ToString("N0");
+        }
+
+        if (selectedGiftPriceText != null)
+        {
+            int price = GetGiftPrice(selectedGiftIndex);
+
+            selectedGiftPriceText.text =
+                price >= 0
+                ? price.ToString("N0") + " コイン"
+                : "";
+        }
     }
 
     private void OnSubmit(string value)
@@ -46,73 +180,109 @@ public class LiveCommentController : MonoBehaviour
 
     public void SendComment()
     {
-        string message = commentInput.text.Trim();
+        string message = commentInput != null
+            ? commentInput.text.Trim()
+            : "";
 
-        if (string.IsNullOrEmpty(message))
+        bool hasMessage = !string.IsNullOrEmpty(message);
+        bool hasGift = selectedGift != null;
+
+        if (!hasMessage && !hasGift)
             return;
 
-        // ユーザーのコメントを表示
-        AddComment("あなた", message);
-
-        commentInput.text = "";
-        commentInput.ActivateInputField();
-
-        // AI未完成時のテスト返信
-        if (enableTestAIReply)
+        if (hasGift)
         {
-            AddAIComment("コメントありがとう！");
+            int price = GetGiftPrice(selectedGiftIndex);
+
+            if (price < 0)
+            {
+                Debug.LogWarning("ギフトの価格が未設定です。");
+                return;
+            }
+
+            if (currentCoins < price)
+            {
+                Debug.LogWarning("コインが不足しています。");
+                return;
+            }
+
+            string giftName =
+                GetGiftDisplayName(selectedGift.gameObject.name);
+
+            currentCoins -= price;
+            UpdateCoinUI();
+
+            string giftMessage =
+                $"{giftName}を贈りました！";
+
+            if (hasMessage)
+                giftMessage += $" {message}";
+
+            AddGiftComment(userName, giftMessage);
+        }
+        else
+        {
+            AddComment(userName, message);
+        }
+
+        if (commentInput != null)
+        {
+            commentInput.text = "";
+            commentInput.ActivateInputField();
+        }
+
+        ClearGiftSelection();
+    }
+
+    private string GetGiftDisplayName(string objectName)
+    {
+        switch (objectName)
+        {
+            case "Finger": return "指ハート";
+            case "BankBook": return "通帳＆印鑑";
+            case "Rose": return "バラ";
+            case "Icon": return "株価アイコン";
+            case "Many": return "お札の束";
+            case "Maus": return "ハートマウス";
+            case "Flower": return "花束";
+            case "PC": return "投資PCセット";
+            case "King": return "投資の王冠";
+            case "Soud": return "勇者の剣";
+            case "Fingerring": return "ダイヤの指輪";
+            case "Cake": return "ウェディングケーキ";
+            default: return objectName;
         }
     }
 
-    // 通常コメントの追加
     public void AddComment(string username, string message)
     {
-        bool isUser = username == "あなた";
+        string nameColor = username == aiCharacterName
+            ? "#F7B3C8"
+            : "#E9B75A";
 
-        Color32 nameColor = isUser
-            ? userNameColor
-            : aiNameColor;
-
-        CreateComment(username, message, nameColor);
-    }
-
-    // AIキャラクター専用
-    public void AddAIComment(string message)
-    {
         CreateComment(
-            aiCharacterName,
-            message,
-            aiNameColor
+            $"<color={nameColor}>{username}</color>：{message}"
         );
     }
 
-    // コメント生成処理
-    private void CreateComment(
-        string username,
-        string message,
-        Color32 nameColor)
+    private void AddGiftComment(string username, string message)
+    {
+        CreateComment(
+            $"<color=#E9B75A>{username}</color>：" +
+            $"<color=#FFD36B>{message}</color>"
+        );
+    }
+
+    private void CreateComment(string text)
     {
         if (commentPrefab == null || commentContent == null)
             return;
 
-        TMP_Text item = Instantiate(
-            commentPrefab,
-            commentContent
-        );
+        TMP_Text item = Instantiate(commentPrefab, commentContent);
 
         item.gameObject.SetActive(true);
         item.richText = true;
-
-        string nameHex = ColorUtility.ToHtmlStringRGB(nameColor);
-        string messageHex = ColorUtility.ToHtmlStringRGB(messageColor);
-
-        // 入力文字がTMPタグとして解釈されるのを防ぐ
-        string safeName = EscapeRichText(username);
-        string safeMessage = EscapeRichText(message);
-
-        item.text =
-            $"<color=#{nameHex}>{safeName}</color>" +
-            $"<color=#{messageHex}>：{safeMessage}</color>";
+        item.text = text;
 
         comments.Enqueue(item.gameObject);
 
@@ -124,18 +294,6 @@ public class LiveCommentController : MonoBehaviour
         Canvas.ForceUpdateCanvases();
     }
 
-    // Rich Text用エスケープ
-    private string EscapeRichText(string value)
-    {
-        if (string.IsNullOrEmpty(value))
-            return "";
-
-        return value
-            .Replace("&", "&amp;")
-            .Replace("<", "&lt;")
-            .Replace(">", "&gt;");
-    }
-
     private void OnDestroy()
     {
         if (sendButton != null)
@@ -143,5 +301,8 @@ public class LiveCommentController : MonoBehaviour
 
         if (commentInput != null)
             commentInput.onSubmit.RemoveListener(OnSubmit);
+
+        // Buttonの他のイベントは消さない
+        // GiftButtonのリスナーは破棄時に自動解放される
     }
 }
