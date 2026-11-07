@@ -640,6 +640,56 @@ MonoBehaviour:
       m_LigatureGlyphID: 1926
     - m_ComponentGlyphIDs: ec040000bc040000
       m_LigatureGlyphID: 15605
+    - m_ComponentGlyphIDs: 500500001b0500003705000062050000
+      m_LigatureGlyphID: 1953
+    - m_ComponentGlyphIDs: 500500006b050000370500005a050000
+      m_LigatureGlyphID: 1954
+    - m_ComponentGlyphIDs: 500500001b050000
+      m_LigatureGlyphID: 1952
+    - m_ComponentGlyphIDs: 4c00000044000000420000004d000000
+      m_LigatureGlyphID: 2014
+    - m_ComponentGlyphIDs: 4c000000290000005b000000
+      m_LigatureGlyphID: 2022
+    - m_ComponentGlyphIDs: 4c0000003100000042000000
+      m_LigatureGlyphID: 2047
+    - m_ComponentGlyphIDs: 4c0000004e00000013000000
+      m_LigatureGlyphID: 2039
+    - m_ComponentGlyphIDs: 4c0000004e00000014000000
+      m_LigatureGlyphID: 2043
+    - m_ComponentGlyphIDs: 4c0000004e00000070000000
+      m_LigatureGlyphID: 2039
+    - m_ComponentGlyphIDs: 4c0000004e00000071000000
+      m_LigatureGlyphID: 2043
+    - m_ComponentGlyphIDs: 4c00000022000000
+      m_LigatureGlyphID: 2009
+    - m_ComponentGlyphIDs: 4c00000037000000
+      m_LigatureGlyphID: 2061
+    - m_ComponentGlyphIDs: 4c00000038000000
+      m_LigatureGlyphID: 2067
+    - m_ComponentGlyphIDs: 4c00000048000000
+      m_LigatureGlyphID: 2020
+    - m_ComponentGlyphIDs: 4c0000004e000000
+      m_LigatureGlyphID: 2035
+    - m_ComponentGlyphIDs: 4c00000055000000
+      m_LigatureGlyphID: 2084
+    - m_ComponentGlyphIDs: 4c00000018010000
+      m_LigatureGlyphID: 2069
+    - m_ComponentGlyphIDs: 4c000000f8010000
+      m_LigatureGlyphID: 2029
+    - m_ComponentGlyphIDs: 510000000f0000004e0000000f000000
+      m_LigatureGlyphID: 2093
+    - m_ComponentGlyphIDs: 5100000022000000
+      m_LigatureGlyphID: 2005
+    - m_ComponentGlyphIDs: 5100000027000000
+      m_LigatureGlyphID: 2015
+    - m_ComponentGlyphIDs: 5100000037000000
+      m_LigatureGlyphID: 2057
+    - m_ComponentGlyphIDs: 5100000038000000
+      m_LigatureGlyphID: 2063
+    - m_ComponentGlyphIDs: 5100000044000000
+      m_LigatureGlyphID: 1995
+    - m_ComponentGlyphIDs: 5100000054000000
+      m_LigatureGlyphID: 2053
     m_GlyphPairAdjustmentRecords:
     - m_FirstAdjustmentRecord:
         m_GlyphIndex: 2
