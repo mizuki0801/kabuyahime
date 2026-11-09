@@ -1426,8 +1426,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 266.3, y: 360.67}
-  m_SizeDelta: {x: 220, y: 70}
+  m_AnchoredPosition: {x: 266.3, y: 367.147}
+  m_SizeDelta: {x: 220, y: 33.237}
   m_Pivot: {x: 0.6287907, y: 0.82382023}
 --- !u!114 &215707862
 MonoBehaviour:
@@ -2983,6 +2983,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::StockApiManager
   stockPriceText: {fileID: 215707862}
   stockChangeText: {fileID: 1286333767}
+  stockMarketTimeText: {fileID: 552326819}
   tradeController: {fileID: 1037237398}
   stockChartRenderer: {fileID: 437641722}
 --- !u!4 &401391400
@@ -3987,6 +3988,142 @@ CanvasRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 540394548}
+  m_CullTransparentMesh: 1
+--- !u!1 &552326817
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 552326818}
+  - component: {fileID: 552326820}
+  - component: {fileID: 552326819}
+  m_Layer: 5
+  m_Name: StockMarketTimeText
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &552326818
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 552326817}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1316100706}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 251.56, y: 340.38}
+  m_SizeDelta: {x: 213.107, y: 33.237}
+  m_Pivot: {x: 0.6287907, y: 0.82382023}
+--- !u!114 &552326819
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 552326817}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_text: "\u682A\u4FA1\u66F4\u65B0\uFF1A\u53D6\u5F97\u4E2D..."
+  m_isRightToLeft: 0
+  m_fontAsset: {fileID: 11400000, guid: 6deb763256e62394285a2b23ee948ce9, type: 2}
+  m_sharedMaterial: {fileID: -8795162365566288377, guid: 6deb763256e62394285a2b23ee948ce9, type: 2}
+  m_fontSharedMaterials: []
+  m_fontMaterial: {fileID: 0}
+  m_fontMaterials: []
+  m_fontColor32:
+    serializedVersion: 2
+    rgba: 4278190080
+  m_fontColor: {r: 0, g: 0, b: 0, a: 1}
+  m_enableVertexGradient: 0
+  m_colorMode: 3
+  m_fontColorGradient:
+    topLeft: {r: 1, g: 1, b: 1, a: 1}
+    topRight: {r: 1, g: 1, b: 1, a: 1}
+    bottomLeft: {r: 1, g: 1, b: 1, a: 1}
+    bottomRight: {r: 1, g: 1, b: 1, a: 1}
+  m_fontColorGradientPreset: {fileID: 0}
+  m_spriteAsset: {fileID: 0}
+  m_tintAllSprites: 0
+  m_StyleSheet: {fileID: 0}
+  m_TextStyleHashCode: -1183493901
+  m_overrideHtmlColors: 0
+  m_faceColor:
+    serializedVersion: 2
+    rgba: 4294967295
+  m_fontSize: 20
+  m_fontSizeBase: 20
+  m_fontWeight: 400
+  m_enableAutoSizing: 0
+  m_fontSizeMin: 18
+  m_fontSizeMax: 72
+  m_fontStyle: 1
+  m_HorizontalAlignment: 1
+  m_VerticalAlignment: 256
+  m_textAlignment: 65535
+  m_characterSpacing: 0
+  m_wordSpacing: 0
+  m_lineSpacing: 0
+  m_lineSpacingMax: 0
+  m_paragraphSpacing: 0
+  m_charWidthMaxAdj: 0
+  m_TextWrappingMode: 1
+  m_wordWrappingRatios: 0.4
+  m_overflowMode: 0
+  m_linkedTextComponent: {fileID: 0}
+  parentLinkedComponent: {fileID: 0}
+  m_enableKerning: 0
+  m_ActiveFontFeatures: 6e72656b
+  m_enableExtraPadding: 0
+  checkPaddingRequired: 0
+  m_isRichText: 1
+  m_EmojiFallbackSupport: 1
+  m_parseCtrlCharacters: 1
+  m_isOrthographic: 1
+  m_isCullingEnabled: 0
+  m_horizontalMapping: 0
+  m_verticalMapping: 0
+  m_uvLineOffset: 0
+  m_geometrySortingOrder: 0
+  m_IsTextObjectScaleStatic: 0
+  m_VertexBufferAutoSizeReduction: 0
+  m_useMaxVisibleDescender: 1
+  m_pageToDisplay: 1
+  m_margin: {x: 0, y: 0, z: 0, w: 0}
+  m_isUsingLegacyAnimationComponent: 0
+  m_isVolumetricText: 0
+  m_hasFontAssetChanged: 0
+  m_baseMaterial: {fileID: 0}
+  m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!222 &552326820
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 552326817}
   m_CullTransparentMesh: 1
 --- !u!1 &558437754
 GameObject:
@@ -7747,9 +7884,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TradeController
   quantityText: {fileID: 813171466}
   estimatedPriceText: {fileID: 891053410}
-  buyingPowerText: {fileID: 1216046656}
   selectedStockNameText: {fileID: 957655921}
   companyDescriptionText: {fileID: 707693934}
+  jsonFileName: user.json
+  enableDiagnostics: 1
 --- !u!1 &1050121762
 GameObject:
   m_ObjectHideFlags: 0
@@ -8814,6 +8952,7 @@ GameObject:
   - component: {fileID: 1216046655}
   - component: {fileID: 1216046657}
   - component: {fileID: 1216046656}
+  - component: {fileID: 1216046658}
   m_Layer: 5
   m_Name: BuyingPowerValue
   m_TagString: Untagged
@@ -8939,6 +9078,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1216046654}
   m_CullTransparentMesh: 1
+--- !u!114 &1216046658
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1216046654}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c7e5e6b54861814428e5e5590d49dd18, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UserCoinDisplay
+  coinText: {fileID: 1216046656}
+  coinType: 0
+  debugMode: 1
 --- !u!1 &1218535696
 GameObject:
   m_ObjectHideFlags: 0
@@ -10228,6 +10382,7 @@ RectTransform:
   m_Children:
   - {fileID: 957655920}
   - {fileID: 215707861}
+  - {fileID: 552326818}
   - {fileID: 1286333769}
   - {fileID: 1457058615}
   - {fileID: 1015187299}
@@ -10345,9 +10500,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TradeController
   quantityText: {fileID: 813171466}
   estimatedPriceText: {fileID: 891053410}
-  buyingPowerText: {fileID: 1216046656}
   selectedStockNameText: {fileID: 957655921}
   companyDescriptionText: {fileID: 707693934}
+  jsonFileName: user.json
+  enableDiagnostics: 1
 --- !u!1 &1335611564
 GameObject:
   m_ObjectHideFlags: 0
@@ -12384,6 +12540,7 @@ GameObject:
   - component: {fileID: 1692599114}
   - component: {fileID: 1692599116}
   - component: {fileID: 1692599115}
+  - component: {fileID: 1692599117}
   m_Layer: 5
   m_Name: Text (TMP)
   m_TagString: Untagged
@@ -12430,7 +12587,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uFFE51,024,500"
+  m_text: "\uFFE50"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 6deb763256e62394285a2b23ee948ce9, type: 2}
   m_sharedMaterial: {fileID: -8795162365566288377, guid: 6deb763256e62394285a2b23ee948ce9, type: 2}
@@ -12509,6 +12666,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1692599113}
   m_CullTransparentMesh: 1
+--- !u!114 &1692599117
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1692599113}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c7e5e6b54861814428e5e5590d49dd18, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UserCoinDisplay
+  coinText: {fileID: 1692599115}
+  coinType: 0
+  debugMode: 1
 --- !u!1 &1713166584
 GameObject:
   m_ObjectHideFlags: 0
