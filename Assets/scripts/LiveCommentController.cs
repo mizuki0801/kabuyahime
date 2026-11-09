@@ -1,5 +1,7 @@
 
+using System;
 using System.Collections.Generic;
+using System.IO;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -27,7 +29,6 @@ public class LiveCommentController : MonoBehaviour
         new Color(1f, 0.82f, 0.35f, 1f);
 
     [Header("Coin Settings")]
-    [SerializeField, Min(0)] private int initialCoins = 10000;
     [SerializeField] private TMP_Text coinBalanceText;
     [SerializeField] private TMP_Text selectedGiftPriceText;
 
@@ -41,17 +42,32 @@ public class LiveCommentController : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private int maxComments = 30;
 
+    [Serializable]
+    private class UserData
+    {
+        public int investmentCoins;
+        public int oshiCoins;
+    }
+
     private readonly Queue<GameObject> comments = new();
     private readonly List<Button> giftButtons = new();
     private readonly Dictionary<Button, Color> originalColors = new();
 
     private Button selectedGift;
     private int selectedGiftIndex = -1;
+
     private int currentCoins;
+    private UserData userData;
+    private string savePath;
 
     private void Start()
     {
-        currentCoins = Mathf.Max(0, initialCoins);
+        savePath = Path.Combine(
+            Application.persistentDataPath,
+            "user.json"
+        );
+
+        LoadUserData();
         UpdateCoinUI();
 
         if (sendButton != null)
@@ -61,6 +77,104 @@ public class LiveCommentController : MonoBehaviour
             commentInput.onSubmit.AddListener(OnSubmit);
 
         SetupGiftButtons();
+    }
+
+    private void LoadUserData()
+    {
+        string defaultPath = Path.Combine(
+            Application.streamingAssetsPath,
+            "user.json"
+        );
+
+        try
+        {
+            string loadPath = File.Exists(savePath)
+                ? savePath
+                : defaultPath;
+
+            if (!File.Exists(loadPath))
+            {
+                Debug.LogError(
+                    "【JSONエラー】user.jsonが見つかりません: "
+                    + loadPath
+                );
+
+                userData = new UserData();
+                currentCoins = 0;
+                return;
+            }
+
+            string json = File.ReadAllText(loadPath);
+
+            userData = JsonUtility.FromJson<UserData>(json);
+
+            if (userData == null)
+            {
+                Debug.LogError("【JSONエラー】データが不正です");
+                userData = new UserData();
+            }
+
+            currentCoins = Mathf.Max(0, userData.oshiCoins);
+
+            Debug.Log(
+                $"【推し活コイン読込成功】{currentCoins} / {loadPath}"
+            );
+        }
+        catch (Exception e)
+        {
+            Debug.LogError(
+                "【JSON読込失敗】" + e.Message
+            );
+
+            userData = new UserData();
+            currentCoins = 0;
+        }
+    }
+
+    private bool SaveUserData()
+    {
+        if (userData == null)
+            return false;
+
+        try
+        {
+            // 保存直前に最新のデータを取得し、
+            // 他の項目をなるべく保持する
+            if (File.Exists(savePath))
+            {
+                string latestJson = File.ReadAllText(savePath);
+
+                UserData latestData =
+                    JsonUtility.FromJson<UserData>(latestJson);
+
+                if (latestData != null)
+                    userData = latestData;
+            }
+
+            userData.oshiCoins = currentCoins;
+
+            string json = JsonUtility.ToJson(userData, true);
+
+            Directory.CreateDirectory(
+                Application.persistentDataPath
+            );
+
+            File.WriteAllText(savePath, json);
+
+            Debug.Log(
+                $"【推し活コイン保存成功】{currentCoins}"
+            );
+
+            return true;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError(
+                "【JSON保存失敗】" + e.Message
+            );
+
+            return false;
+        }
     }
 
     private void SetupGiftButtons()
@@ -81,7 +195,8 @@ public class LiveCommentController : MonoBehaviour
 
         for (int i = 0; i < giftGrid.childCount; i++)
         {
-            Button button = giftGrid.GetChild(i).GetComponent<Button>();
+            Button button =
+                giftGrid.GetChild(i).GetComponent<Button>();
 
             if (button == null)
                 continue;
@@ -130,7 +245,8 @@ public class LiveCommentController : MonoBehaviour
             Image image = selectedGift.GetComponent<Image>();
 
             if (image != null &&
-                originalColors.TryGetValue(selectedGift, out Color color))
+                originalColors.TryGetValue(
+                    selectedGift, out Color color))
             {
                 image.color = color;
             }
@@ -168,8 +284,8 @@ public class LiveCommentController : MonoBehaviour
 
             selectedGiftPriceText.text =
                 price >= 0
-                ? price.ToString("N0") + " コイン"
-                : "";
+                    ? price.ToString("N0") + " コイン"
+                    : "";
         }
     }
 
@@ -196,20 +312,37 @@ public class LiveCommentController : MonoBehaviour
 
             if (price < 0)
             {
-                Debug.LogWarning("ギフトの価格が未設定です。");
+                Debug.LogWarning(
+                    "ギフトの価格が未設定です。"
+                );
                 return;
             }
 
             if (currentCoins < price)
             {
-                Debug.LogWarning("コインが不足しています。");
+                Debug.LogWarning(
+                    "コインが不足しています。"
+                );
                 return;
             }
 
             string giftName =
-                GetGiftDisplayName(selectedGift.gameObject.name);
+                GetGiftDisplayName(
+                    selectedGift.gameObject.name
+                );
+
+            int previousCoins = currentCoins;
 
             currentCoins -= price;
+
+            // 保存失敗時はコインを戻して送信中止
+            if (!SaveUserData())
+            {
+                currentCoins = previousCoins;
+                UpdateCoinUI();
+                return;
+            }
+
             UpdateCoinUI();
 
             string giftMessage =
@@ -254,18 +387,23 @@ public class LiveCommentController : MonoBehaviour
         }
     }
 
-    public void AddComment(string username, string message)
+    public void AddComment(
+        string username,
+        string message)
     {
-        string nameColor = username == aiCharacterName
-            ? "#F7B3C8"
-            : "#E9B75A";
+        string nameColor =
+            username == aiCharacterName
+                ? "#F7B3C8"
+                : "#E9B75A";
 
         CreateComment(
             $"<color={nameColor}>{username}</color>：{message}"
         );
     }
 
-    private void AddGiftComment(string username, string message)
+    private void AddGiftComment(
+        string username,
+        string message)
     {
         CreateComment(
             $"<color=#E9B75A>{username}</color>：" +
@@ -275,10 +413,12 @@ public class LiveCommentController : MonoBehaviour
 
     private void CreateComment(string text)
     {
-        if (commentPrefab == null || commentContent == null)
+        if (commentPrefab == null ||
+            commentContent == null)
             return;
 
-        TMP_Text item = Instantiate(commentPrefab, commentContent);
+        TMP_Text item =
+            Instantiate(commentPrefab, commentContent);
 
         item.gameObject.SetActive(true);
         item.richText = true;
@@ -301,8 +441,5 @@ public class LiveCommentController : MonoBehaviour
 
         if (commentInput != null)
             commentInput.onSubmit.RemoveListener(OnSubmit);
-
-        // Buttonの他のイベントは消さない
-        // GiftButtonのリスナーは破棄時に自動解放される
     }
 }

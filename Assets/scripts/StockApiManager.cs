@@ -6,14 +6,17 @@ using TMPro;
 
 public class StockApiManager : MonoBehaviour
 {
-    [Header("Œ»İŠ”‰¿")]
+    [Header("ï¿½ï¿½ï¿½İŠï¿½ï¿½ï¿½")]
     public TMP_Text stockPriceText;
     public TMP_Text stockChangeText;
 
-    [Header("’•¶")]
+    [Header("æ ªä¾¡ã®å–å¼•æ—¥æ™‚")]
+    public TMP_Text stockMarketTimeText;
+
+    [Header("ï¿½ï¿½ï¿½ï¿½")]
     public TradeController tradeController;
 
-    [Header("ƒ`ƒƒ[ƒg")]
+    [Header("ï¿½`ï¿½ï¿½ï¿½[ï¿½g")]
     public StockChartRenderer stockChartRenderer;
 
     private string quoteBaseUrl =
@@ -22,10 +25,26 @@ public class StockApiManager : MonoBehaviour
     private string historyBaseUrl =
         "http://localhost:8000/api/v1/history/";
 
-    // Œ»İ‘I‘ğ‚µ‚Ä‚¢‚é–Á•¿
     private string currentTicker = "7203";
+    private int latestQuoteRequestId;
+    private int latestHistoryRequestId;
 
-    // Œ»İ‘I‘ğ‚µ‚Ä‚¢‚éŠúŠÔ
+    private static string NormalizeTicker(string ticker)
+    {
+        if (string.IsNullOrWhiteSpace(ticker)) return "";
+        string code = ticker.Trim().ToUpperInvariant();
+        return code.EndsWith(".T", StringComparison.Ordinal) ? code : code + ".T";
+    }
+
+    // æ—¢å­˜ã®FastAPIã‚¨ãƒ³ãƒ‰ãƒã‚¤ãƒ³ãƒˆã¯æ•°å­—4æ¡ã‚’å—ã‘å–ã‚‹æƒ³å®šã€‚
+    private static string ApiTicker(string ticker)
+    {
+        string normalized = NormalizeTicker(ticker);
+        return normalized.EndsWith(".T", StringComparison.Ordinal)
+            ? normalized.Substring(0, normalized.Length - 2)
+            : normalized;
+    }
+
     private ChartPeriod currentPeriod = ChartPeriod.OneMonth;
 
     private enum ChartPeriod
@@ -39,49 +58,60 @@ public class StockApiManager : MonoBehaviour
 
 
     // =====================================
-    // Å‰‚Ì•\¦
     // =====================================
 
     void Start()
     {
-        // Å‰‚Íƒgƒˆƒ^
         GetStockPrice(currentTicker);
 
-        // Å‰‚Í1‚©Œ•\¦
         ShowOneMonth();
     }
 
 
     // =====================================
-    // –Á•¿‚ğ•ÏX
     // =====================================
 
     public void GetStockPrice(string ticker)
     {
-        currentTicker = ticker;
+        string normalized = NormalizeTicker(ticker);
+        if (string.IsNullOrEmpty(normalized))
+        {
+            Debug.LogError("éŠ˜æŸ„ã‚³ãƒ¼ãƒ‰ãŒç©ºã§ã™");
+            return;
+        }
 
-        StartCoroutine(
-            GetStockPriceCoroutine(ticker)
-        );
+        currentTicker = normalized;
+        int requestId = ++latestQuoteRequestId;
 
-        // –Á•¿‚ğ•Ï‚¦‚Ä‚àŒ»İ‘I‘ğ’†‚ÌŠúŠÔ‚ğˆÛ
+        if (tradeController != null)
+            tradeController.BeginQuoteRequest(normalized);
+
+        StartCoroutine(GetStockPriceCoroutine(normalized, requestId));
+
         RefreshCurrentChart();
     }
 
 
     // =====================================
-    // Œ»İŠ”‰¿API
     // =====================================
 
-    IEnumerator GetStockPriceCoroutine(string ticker)
+
+    // =====================================
+    // ç¾åœ¨æ ªä¾¡API
+    // =====================================
+
+    IEnumerator GetStockPriceCoroutine(string ticker, int requestId)
     {
-        string apiUrl =
-            quoteBaseUrl + ticker;
+        string apiUrl = quoteBaseUrl + ApiTicker(ticker);
 
         using (UnityWebRequest request =
                UnityWebRequest.Get(apiUrl))
         {
             yield return request.SendWebRequest();
+
+            // å¤ã„éŠ˜æŸ„ã®ãƒ¬ã‚¹ãƒãƒ³ã‚¹ã§ç¾åœ¨ã®ä¾¡æ ¼ã‚„æ™‚åˆ»ã‚’ä¸Šæ›¸ãã—ãªã„ã€‚
+            if (requestId != latestQuoteRequestId || ticker != currentTicker)
+                yield break;
 
             if (request.result ==
                 UnityWebRequest.Result.Success)
@@ -91,12 +121,22 @@ public class StockApiManager : MonoBehaviour
                         request.downloadHandler.text
                     );
 
+                if (data == null ||
+                    (!string.IsNullOrEmpty(data.ticker) && NormalizeTicker(data.ticker) != ticker) ||
+                    float.IsNaN(data.price) || float.IsInfinity(data.price) || data.price <= 0)
+                {
+                    Debug.LogError("æ ªä¾¡ãƒ‡ãƒ¼ã‚¿ãŒä¸æ­£ã€ã¾ãŸã¯éŠ˜æŸ„ãŒä¸€è‡´ã—ã¾ã›ã‚“");
+                    yield break;
+                }
+
+                // æ ªä¾¡è¡¨ç¤º
                 if (stockPriceText != null)
                 {
                     stockPriceText.text =
                         data.price.ToString("N0");
                 }
 
+                // å‰æ—¥æ¯”è¡¨ç¤º
                 if (stockChangeText != null)
                 {
                     stockChangeText.text =
@@ -105,34 +145,73 @@ public class StockApiManager : MonoBehaviour
                         ) + "%";
                 }
 
+                // æ ªä¾¡ã®å–å¼•æ—¥æ™‚ã‚’æ—¥æœ¬æ™‚é–“ã§è¡¨ç¤º
+                UpdateMarketTime(data.market_time);
+
+                // å£²è²·ç”»é¢ã®æ ªä¾¡ã‚’æ›´æ–°
                 if (tradeController != null)
                 {
-                    tradeController.SetStockPrice(
-                        Mathf.RoundToInt(data.price)
-                    );
+                    tradeController.ApplyApiStockPrice(ticker, data.price);
                 }
 
                 Debug.Log(
-                    "Œ»İŠ”‰¿æ“¾¬Œ÷F" +
+                    "ç¾åœ¨æ ªä¾¡å–å¾—æˆåŠŸï¼š" +
                     data.ticker +
-                    " / " +
-                    data.price
+                    " / æ ªä¾¡ï¼š" +
+                    data.price +
+                    " / å–å¼•æ—¥æ™‚ï¼š" +
+                    data.market_time
                 );
             }
             else
             {
                 Debug.LogError(
-                    "Š”‰¿æ“¾¸”sF" +
+                    "æ ªä¾¡å–å¾—å¤±æ•—ï¼š" +
                     request.error
                 );
             }
         }
     }
 
+    // =====================================
+    // å–å¼•æ—¥æ™‚ã‚’æ—¥æœ¬æ™‚é–“ã§è¡¨ç¤º
+    // =====================================
+
+    private void UpdateMarketTime(string marketTime)
+    {
+        if (stockMarketTimeText == null)
+        {
+            return;
+        }
+
+        if (string.IsNullOrEmpty(marketTime))
+        {
+            stockMarketTimeText.text = "æ ªä¾¡æ›´æ–°ï¼šä¸æ˜";
+            return;
+        }
+
+        if (DateTimeOffset.TryParse(
+            marketTime,
+            out DateTimeOffset utcTime))
+        {
+            DateTimeOffset japanTime =
+                utcTime.ToUniversalTime().ToOffset(
+                    TimeSpan.FromHours(9)
+                );
+
+            stockMarketTimeText.text =
+                "æ ªä¾¡æ›´æ–°ï¼š" +
+                japanTime.ToString("yyyy/MM/dd HH:mm");
+        }
+        else
+        {
+            stockMarketTimeText.text = "æ ªä¾¡æ›´æ–°ï¼šä¸æ˜";
+        }
+    }
+
+
 
     // =====================================
-    // 1“ú
-    // 5•ª‘«
     // =====================================
 
     public void ShowOneDay()
@@ -154,8 +233,6 @@ public class StockApiManager : MonoBehaviour
 
 
     // =====================================
-    // 1TŠÔ
-    // 30•ª‘«
     // =====================================
 
     public void ShowOneWeek()
@@ -177,8 +254,6 @@ public class StockApiManager : MonoBehaviour
 
 
     // =====================================
-    // 1‚©Œ
-    // 1ŠÔ‘«
     // =====================================
 
     public void ShowOneMonth()
@@ -200,8 +275,6 @@ public class StockApiManager : MonoBehaviour
 
 
     // =====================================
-    // 3‚©Œ
-    // 1“ú‘«
     // =====================================
 
     public void ShowThreeMonths()
@@ -223,8 +296,6 @@ public class StockApiManager : MonoBehaviour
 
 
     // =====================================
-    // 1”N
-    // 1“ú‘«
     // =====================================
 
     public void ShowOneYear()
@@ -246,7 +317,6 @@ public class StockApiManager : MonoBehaviour
 
 
     // =====================================
-    // Œ»İ‚ÌŠúŠÔ‚ÅƒOƒ‰ƒt‚ğÄæ“¾
     // =====================================
 
     private void RefreshCurrentChart()
@@ -277,7 +347,6 @@ public class StockApiManager : MonoBehaviour
 
 
     // =====================================
-    // —š—ğæ“¾ŠJn
     // =====================================
 
     private void GetHistory(
@@ -292,42 +361,44 @@ public class StockApiManager : MonoBehaviour
         string end =
             endDate.ToString("yyyy-MM-dd");
 
+        int requestId = ++latestHistoryRequestId;
         StartCoroutine(
             GetStockHistoryCoroutine(
                 currentTicker,
                 start,
                 end,
-                interval
+                interval,
+                requestId
             )
         );
     }
 
 
     // =====================================
-    // ‰ß‹Š”‰¿API
     // =====================================
 
     IEnumerator GetStockHistoryCoroutine(
         string ticker,
         string start,
         string end,
-        string interval
+        string interval,
+        int requestId
     )
     {
         string apiUrl =
             historyBaseUrl +
-            ticker +
+            ApiTicker(ticker) +
             "?start=" + start +
             "&end=" + end +
             "&interval=" + interval;
 
 
         Debug.Log(
-            "—š—ğæ“¾F" +
+            "ï¿½ï¿½ï¿½ï¿½ï¿½æ“¾ï¿½F" +
             ticker +
             " / " +
             start +
-            " ` " +
+            " ï¿½` " +
             end +
             " / " +
             interval
@@ -338,6 +409,9 @@ public class StockApiManager : MonoBehaviour
                UnityWebRequest.Get(apiUrl))
         {
             yield return request.SendWebRequest();
+
+            if (requestId != latestHistoryRequestId || ticker != currentTicker)
+                yield break;
 
             if (request.result ==
                 UnityWebRequest.Result.Success)
@@ -353,9 +427,9 @@ public class StockApiManager : MonoBehaviour
                     history.bars.Length > 0)
                 {
                     Debug.Log(
-                        "—š—ğæ“¾¬Œ÷I ƒf[ƒ^”F" +
+                        "ï¿½ï¿½ï¿½ï¿½ï¿½æ“¾ï¿½ï¿½ï¿½ï¿½ï¿½I ï¿½fï¿½[ï¿½^ï¿½ï¿½ï¿½F" +
                         history.bars.Length +
-                        " / intervalF" +
+                        " / intervalï¿½F" +
                         interval
                     );
 
@@ -370,14 +444,14 @@ public class StockApiManager : MonoBehaviour
                 else
                 {
                     Debug.LogWarning(
-                        "—š—ğƒf[ƒ^‚ª‚ ‚è‚Ü‚¹‚ñ"
+                        "ï¿½ï¿½ï¿½ï¿½ï¿½fï¿½[ï¿½^ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ü‚ï¿½ï¿½ï¿½"
                     );
                 }
             }
             else
             {
                 Debug.LogError(
-                    "—š—ğæ“¾¸”sF" +
+                    "ï¿½ï¿½ï¿½ï¿½ï¿½æ“¾ï¿½ï¿½ï¿½sï¿½F" +
                     request.error
                 );
             }
@@ -387,7 +461,6 @@ public class StockApiManager : MonoBehaviour
 
 
 // =====================================
-// Œ»İŠ”‰¿
 // =====================================
 
 [System.Serializable]
@@ -401,11 +474,12 @@ public class StockData
 
     public float change;
     public float change_percent;
+
+    public string market_time;
 }
 
 
 // =====================================
-// ‰ß‹Š”‰¿
 // =====================================
 
 [System.Serializable]
@@ -419,13 +493,11 @@ public class HistoryData
 
 
 // =====================================
-// 1–{•ª‚ÌŠ”‰¿
 // =====================================
 
 [System.Serializable]
 public class HistoryItem
 {
-    // ŠÔ‘«‚Åg‚¤
     public string ts;
 
     public string date;
