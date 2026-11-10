@@ -364,6 +364,15 @@ public class LiveCommentController : MonoBehaviour
             commentInput.ActivateInputField();
         }
 
+        // テスト用：コメント／スパチャ送信後にキャラクターが自動返信する
+        if (enableTestAIReply)
+        {
+            AddComment(
+                aiCharacterName,
+                hasGift ? "スパチャありがとうございます！" : "コメントありがとうございます！"
+            );
+        }
+
         ClearGiftSelection();
     }
 
