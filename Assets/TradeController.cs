@@ -814,4 +814,54 @@ public class TradeController : MonoBehaviour
         else
             Debug.LogError("【株価取得不可】StockApiManagerが見つかりません。購入は無効です。");
     }
+
+    public bool TryGetHolding(
+        string ticker,
+        out string stockName,
+        out int holdingQuantity,
+        out float averagePurchasePrice)
+    {
+        stockName = "";
+        holdingQuantity = 0;
+        averagePurchasePrice = 0f;
+
+        if (string.IsNullOrWhiteSpace(ticker))
+            return false;
+
+        if (!LoadHoldings())
+            return false;
+
+        string normalizedTicker = NormalizeTicker(ticker);
+
+        foreach (var holding in holdingsData.holdings)
+        {
+            if (holding.ticker != normalizedTicker)
+                continue;
+
+            stockName = holding.name;
+            holdingQuantity = holding.quantity;
+            averagePurchasePrice = holding.averagePurchasePrice;
+
+            return true;
+        }
+
+        return false;
+    }
+    
+    public bool TryGetCurrentStockPrice(
+        string ticker,
+        out int price)
+    {
+        price = 0;
+
+        if (!apiQuoteReady ||
+            stockPrice <= 0 ||
+            NormalizeTicker(ticker) != selectedTicker)
+        {
+            return false;
+        }
+
+        price = stockPrice;
+        return true;
+    }
 }

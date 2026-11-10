@@ -18,7 +18,7 @@ public class LiveCommentController : MonoBehaviour
     [SerializeField] private string userName = "あなた";
 
     [Header("AI Character")]
-    [SerializeField] private string aiCharacterName = "博多香";
+    [SerializeField] private string aiCharacterName = "麺田　食子";
 
     [Header("Test Settings")]
     [SerializeField] private bool enableTestAIReply = false;
@@ -35,8 +35,31 @@ public class LiveCommentController : MonoBehaviour
     [Header("Gift Prices (GiftGrid Order)")]
     [SerializeField] private int[] giftPrices =
     {
-        10, 30, 50, 100, 200, 500,
-        1000, 2000, 3000, 5000, 8000, 10000
+        //ギフトの価格設定
+        //指ハート
+        10,
+        //通用＆印鑑 
+        30,
+        //バラ 
+        50,
+        // アップダウン
+        100, 
+        //札束
+        200, 
+        //マウス
+        500,
+        //花束
+        1000, 
+        //PC
+        2000, 
+        //冠
+        3000, 
+        //剣
+        5000, 
+        //指輪
+        8000, 
+        //ケーキ
+        10000
     };
 
     [Header("Settings")]
