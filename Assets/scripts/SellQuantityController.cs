@@ -1,4 +1,3 @@
-
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -6,143 +5,156 @@ using UnityEngine.UI;
 public class SellQuantityController : MonoBehaviour
 {
     [Header("UI")]
-    [SerializeField] private TMP_Text quantityText;
-    [SerializeField] private Button minusButton;
-    [SerializeField] private Button plusButton;
-    [SerializeField] private Button sellAllButton;
+    public TMP_Text quantityText;
+    public Button minusButton;
+    public Button plusButton;
+    public Button sellAllButton;
+    public TMP_Text estimatedAmountText;
+    public TMP_Text profitLossText;
+    public Button confirmSellButton;
 
-    [SerializeField] private TMP_Text estimatedAmountText;
-    [SerializeField] private TMP_Text profitLossText;
+    [Header("Profit / Loss Colors")]
+    public Color profitColor = new Color32(46, 180, 100, 255);
+    public Color lossColor = new Color32(220, 65, 65, 255);
+    public Color neutralColor = Color.white;
 
-    [Header("Test Stock Data")]
-    [SerializeField] private int holdingQuantity = 100;
-    [SerializeField] private int sellQuantity = 10;
-    [SerializeField] private float currentPrice = 3500f;
-    [SerializeField] private float averagePurchasePrice = 3472f;
+    [Header("Test Stock Data (fallback display only)")]
+    public int holdingQuantity = 100;
+    public int sellQuantity = 10;
+    public int currentPrice = 3500;
+    public float averagePurchasePrice = 3472f;
 
     [Header("Data References")]
-    [SerializeField] private TradeController tradeController;
-    [SerializeField] private string selectedTicker = "7203.T";
+    public TradeController tradeController;
+    public string selectedTicker = "7203.T";
+
+    private bool hasHolding;
+    private bool hasApiPrice;
 
     private void Start()
     {
-        minusButton.onClick.AddListener(Decrease);
-        plusButton.onClick.AddListener(Increase);
-        sellAllButton.onClick.AddListener(SellAll);
+        if (tradeController == null)
+            tradeController = FindFirstObjectByType<TradeController>();
 
-        holdingQuantity = Mathf.Max(0, holdingQuantity);
-        sellQuantity = holdingQuantity > 0
-            ? Mathf.Clamp(sellQuantity, 1, holdingQuantity)
-            : 0;
+        if (minusButton != null) minusButton.onClick.AddListener(DecreaseQuantity);
+        if (plusButton != null) plusButton.onClick.AddListener(IncreaseQuantity);
+        if (sellAllButton != null) sellAllButton.onClick.AddListener(SellAll);
+        // ConfirmSellButton is already wired through Inspector On Click().
+        // Do not register another listener here or the sale may execute twice.
 
-        LoadSelectedHolding();
-        UpdateUI();
+        RefreshData();
     }
 
     private void Update()
     {
-        if (tradeController == null)
-            return;
-
-        if (tradeController.TryGetCurrentStockPrice(
-            selectedTicker,
-            out int apiPrice))
+        // API株価が届いた時に表示を更新する。JSONは毎フレーム読まない。
+        if (tradeController == null) return;
+        int latestPrice;
+        bool ready = tradeController.TryGetCurrentStockPrice(selectedTicker, out latestPrice);
+        if (ready != hasApiPrice || (ready && latestPrice != currentPrice))
         {
-            if (!Mathf.Approximately(currentPrice, apiPrice))
-            {
-                currentPrice = apiPrice;
-                UpdateUI();
-
-                Debug.Log(
-                    $"【売却株価更新】{selectedTicker} / {currentPrice:N0}円"
-                );
-            }
+            hasApiPrice = ready;
+            if (ready) currentPrice = latestPrice;
+            UpdateDisplay();
         }
     }
 
-
-    private void Decrease()
+    public void RefreshData()
     {
-        sellQuantity = Mathf.Max(
-            holdingQuantity > 0 ? 1 : 0,
-            sellQuantity - 1
-        );
-        UpdateUI();
+        hasHolding = false;
+        hasApiPrice = false;
+        if (tradeController != null)
+        {
+            string stockName;
+            int count;
+            float average;
+            if (tradeController.TryGetHolding(selectedTicker, out stockName, out count, out average))
+            {
+                hasHolding = true;
+                holdingQuantity = count;
+                averagePurchasePrice = average;
+            }
+            else
+            {
+                holdingQuantity = 0;
+            }
+
+            int apiPrice;
+            hasApiPrice = tradeController.TryGetCurrentStockPrice(selectedTicker, out apiPrice);
+            if (hasApiPrice) currentPrice = apiPrice;
+        }
+        sellQuantity = Mathf.Clamp(sellQuantity, holdingQuantity > 0 ? 1 : 0, Mathf.Max(0, holdingQuantity));
+        UpdateDisplay();
     }
 
-    private void Increase()
+    public void IncreaseQuantity()
     {
-        sellQuantity = Mathf.Min(
-            holdingQuantity,
-            sellQuantity + 1
-        );
-        UpdateUI();
+        sellQuantity = Mathf.Min(holdingQuantity, sellQuantity + 1);
+        UpdateDisplay();
     }
 
-    private void SellAll()
+    public void DecreaseQuantity()
+    {
+        sellQuantity = Mathf.Max(holdingQuantity > 0 ? 1 : 0, sellQuantity - 1);
+        UpdateDisplay();
+    }
+
+    public void SellAll()
     {
         sellQuantity = holdingQuantity;
-        UpdateUI();
+        UpdateDisplay();
     }
 
-    private void UpdateUI()
+    public void ConfirmSell()
     {
-        double estimatedAmount = currentPrice * sellQuantity;
+        if (tradeController == null || !hasHolding || !hasApiPrice ||
+            sellQuantity <= 0 || sellQuantity > holdingQuantity)
+        {
+            Debug.LogWarning("【売却不可】保有株・数量・API株価を確認してください");
+            return;
+        }
 
-        double profitLoss =
-            (currentPrice - averagePurchasePrice) * sellQuantity;
+        if (tradeController.SellStock(selectedTicker, sellQuantity))
+        {
+            tradeController.RefreshCoins();
+            RefreshData();
+        }
+    }
 
-        if (quantityText != null)
-            quantityText.text = $"{sellQuantity}株";
+    private void UpdateDisplay()
+    {
+        if (quantityText != null) quantityText.text = sellQuantity.ToString("N0") + "株";
+        if (minusButton != null) minusButton.interactable = sellQuantity > 1;
+        if (plusButton != null) plusButton.interactable = sellQuantity < holdingQuantity;
+        if (sellAllButton != null) sellAllButton.interactable = holdingQuantity > 0;
 
         if (estimatedAmountText != null)
-            estimatedAmountText.text =
-                $"売却予定額：{estimatedAmount:N0}円";
+            estimatedAmountText.text = hasApiPrice ?
+                ((long)currentPrice * sellQuantity).ToString("N0") + "円" : "株価取得待ち";
 
         if (profitLossText != null)
         {
-            string sign = profitLoss > 0 ? "+" : "";
+            if (hasApiPrice && hasHolding && sellQuantity > 0)
+            {
+                double profit = (currentPrice - (double)averagePurchasePrice) * sellQuantity;
+                profitLossText.text = (profit > 0 ? "+" : "") + profit.ToString("N0") + "円";
 
-            profitLossText.text =
-                $"実現損益：{sign}{profitLoss:N0}円";
-
-            profitLossText.color = profitLoss > 0
-                ? new Color(0.1f, 0.55f, 0.3f)
-                : profitLoss < 0
-                    ? new Color(0.8f, 0.2f, 0.2f)
-                    : Color.gray;
-        }
-    }
-
-    private void LoadSelectedHolding()
-    {
-        if (tradeController == null)
-        {
-            Debug.LogError("【売却】TradeControllerが未設定です");
-            return;
+                if (profit > 0)
+                    profitLossText.color = profitColor;
+                else if (profit < 0)
+                    profitLossText.color = lossColor;
+                else
+                    profitLossText.color = neutralColor;
+            }
+            else
+            {
+                profitLossText.text = "--";
+                profitLossText.color = neutralColor;
+            }
         }
 
-        if (tradeController.TryGetHolding(
-            selectedTicker,
-            out string stockName,
-            out int quantity,
-            out float averagePrice))
-        {
-            holdingQuantity = quantity;
-            averagePurchasePrice = averagePrice;
-
-            sellQuantity = Mathf.Min(10, holdingQuantity);
-
-            Debug.Log(
-                $"【保有株取得成功】{stockName} / " +
-                $"{holdingQuantity}株 / 平均取得単価:{averagePurchasePrice:N2}円"
-            );
-        }
-        else
-        {
-            Debug.LogWarning(
-                $"【売却】保有株が見つかりません: {selectedTicker}"
-            );
-        }
+        if (confirmSellButton != null)
+            confirmSellButton.interactable = tradeController != null && hasHolding && hasApiPrice &&
+                sellQuantity > 0 && sellQuantity <= holdingQuantity;
     }
 }

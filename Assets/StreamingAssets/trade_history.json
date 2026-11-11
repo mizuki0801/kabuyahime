@@ -1,0 +1,37 @@
+{
+    "trades": [
+        {
+            "id": "0b6520d9-3c75-48b6-872a-669a061fec8f",
+            "ticker": "7203.T",
+            "stockName": "トヨタ自動車（7203）",
+            "type": "buy",
+            "dateTime": "2026-11-11 12:12:00",
+            "quantity": 10,
+            "price": 3395,
+            "averagePurchasePrice": 3395.0,
+            "realizedProfit": 0.0
+        },
+        {
+            "id": "48d25dfa-0f88-4162-8293-bf0e1f022746",
+            "ticker": "7203.T",
+            "stockName": "トヨタ自動車（7203）",
+            "type": "buy",
+            "dateTime": "2026-11-11 12:12:05",
+            "quantity": 10,
+            "price": 3395,
+            "averagePurchasePrice": 3395.0,
+            "realizedProfit": 0.0
+        },
+        {
+            "id": "dcaddd07-742c-4302-84ea-00c96d0e7bfa",
+            "ticker": "7203.T",
+            "stockName": "トヨタ自動車（7203）",
+            "type": "sell",
+            "dateTime": "2026-11-11 12:19:42",
+            "quantity": 119,
+            "price": 3395,
+            "averagePurchasePrice": 3459.058837890625,
+            "realizedProfit": -7623.001708984375
+        }
+    ]
+}

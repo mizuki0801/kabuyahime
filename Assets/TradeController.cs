@@ -44,6 +44,27 @@ public class TradeController : MonoBehaviour
         public HoldingData[] holdings;
     }
 
+[Serializable]
+public class TradeHistoryItemData
+{
+    public string id;
+    public string ticker;
+    public string stockName;
+    public string type;
+    public string dateTime;
+    public int quantity;
+    public int price;
+    public float averagePurchasePrice;
+    public double realizedProfit;
+}
+
+[Serializable]
+public class TradeHistoryData
+{
+    public TradeHistoryItemData[] trades;
+}
+
+
     private int quantity = 100;
     private int stockPrice;
     private int buyingPower;
@@ -81,7 +102,7 @@ public class TradeController : MonoBehaviour
 
         LoadCoins();
         if (stockApiManager == null)
-            stockApiManager = FindObjectOfType<StockApiManager>();
+            stockApiManager = FindFirstObjectByType<StockApiManager>();;
     }
 
     private void Start()
@@ -515,10 +536,16 @@ public class TradeController : MonoBehaviour
         // 両方のJSONをバックアップしてから更新する
         string originalUserJson;
         string originalHoldingsJson;
+        string historyPath = Path.Combine(
+        Application.streamingAssetsPath,
+        "trade_history.json"
+        );
+        string originalHistoryJson;
         try
         {
             originalUserJson = File.ReadAllText(jsonPath);
             originalHoldingsJson = File.ReadAllText(holdingsJsonPath);
+            originalHistoryJson = File.ReadAllText(historyPath);
         }
         catch (Exception e)
         {
@@ -547,12 +574,46 @@ public class TradeController : MonoBehaviour
             return;
         }
 
+
+        TradeHistoryItemData trade = new TradeHistoryItemData
+        {
+            id = Guid.NewGuid().ToString(),
+            ticker = selectedTicker,
+            stockName = selectedStockName,
+            type = "buy",
+            dateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+            quantity = quantity,
+            price = stockPrice,
+            averagePurchasePrice = stockPrice,
+            realizedProfit = 0
+        };
+
+        if (!SaveTradeHistory(trade))
+        {
+            Debug.LogError("【購入失敗】履歴を保存できなかったため取引を取り消します");
+
+            RestorePurchaseFiles(originalUserJson, originalHoldingsJson);
+
+            try
+            {
+                File.WriteAllText(historyPath, originalHistoryJson);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("【履歴復元失敗】" + e.Message);
+            }
+
+            return;
+        }
+
         UpdateAllTexts();
+
         Debug.Log(
             $"【購入成功】銘柄:{selectedTicker} 株数:{quantity} " +
             $"購入単価:{stockPrice:N0} 購入金額:{totalPrice:N0} " +
             $"残高:{buyingPower:N0}"
         );
+
     }
 
     // 保存に失敗したとき、両方のJSONを元に戻す（ベストエフォート）
@@ -807,7 +868,7 @@ public class TradeController : MonoBehaviour
         OnOrderChanged();
 
         if (stockApiManager == null)
-            stockApiManager = FindObjectOfType<StockApiManager>();
+           stockApiManager = FindFirstObjectByType<StockApiManager>();
 
         if (stockApiManager != null)
             stockApiManager.GetStockPrice(ticker);
@@ -864,4 +925,181 @@ public class TradeController : MonoBehaviour
         price = stockPrice;
         return true;
     }
-}
+
+    // 売却処理：APIで取得済みの現在株価を使用する。
+    public bool SellStock(string ticker, int sellQuantity)
+    {
+        if (sellQuantity <= 0 || string.IsNullOrWhiteSpace(ticker))
+        {
+            Debug.LogWarning("【売却失敗】銘柄または数量が不正です");
+            return false;
+        }
+
+        int executionPrice;
+        if (!TryGetCurrentStockPrice(ticker, out executionPrice))
+        {
+            Debug.LogWarning("【売却失敗】選択銘柄のAPI株価が未取得です");
+            return false;
+        }
+
+        if (!LoadCoins() || !LoadHoldings())
+        {
+            Debug.LogError("【売却失敗】JSONを読み込めません");
+            return false;
+        }
+
+        string normalized = NormalizeTicker(ticker);
+        HoldingData target = null;
+        foreach (var holding in holdingsData.holdings)
+        {
+            if (NormalizeTicker(holding.ticker) == normalized)
+            {
+                target = holding;
+                break;
+            }
+        }
+
+        if (target == null || target.quantity < sellQuantity)
+        {
+            Debug.LogWarning("【売却失敗】保有株数が不足しています");
+            return false;
+        }
+
+        long proceeds = (long)executionPrice * sellQuantity;
+        long nextBalance = (long)buyingPower + proceeds;
+        if (nextBalance > int.MaxValue)
+        {
+            Debug.LogError("【売却失敗】投資コインがintの上限を超えます");
+            return false;
+        }
+
+        string userBackup;
+        string holdingsBackup;
+        string historyPath = Path.Combine(
+        Application.streamingAssetsPath,
+            "trade_history.json"
+        );
+        string historyBackup;
+        try
+        {
+            userBackup = File.ReadAllText(jsonPath);
+            holdingsBackup = File.ReadAllText(holdingsJsonPath);
+            historyBackup = File.ReadAllText(historyPath);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("【売却失敗】バックアップ読込エラー: " + e.Message);
+            return false;
+        }
+
+        float averageCost = target.averagePurchasePrice;
+        target.quantity -= sellQuantity;
+        if (target.quantity == 0)
+        {
+            var remaining = new System.Collections.Generic.List<HoldingData>(holdingsData.holdings);
+            remaining.Remove(target);
+            holdingsData.holdings = remaining.ToArray();
+        }
+
+        if (!SaveHoldings() || !SaveCoins((int)nextBalance))
+        {
+            Debug.LogError("【売却失敗】保存に失敗したため復元を試みます");
+            RestorePurchaseFiles(userBackup, holdingsBackup);
+            return false;
+        }
+
+        double realizedProfit =
+        (executionPrice - (double)averageCost) * sellQuantity;
+
+        TradeHistoryItemData trade = new TradeHistoryItemData
+        {
+            id = Guid.NewGuid().ToString(),
+            ticker = normalized,
+            stockName = target.name,
+            type = "sell",
+            dateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+            quantity = sellQuantity,
+            price = executionPrice,
+            averagePurchasePrice = averageCost,
+            realizedProfit = realizedProfit
+        };
+
+        if (!SaveTradeHistory(trade))
+        {
+            Debug.LogError("【売却失敗】履歴保存に失敗したため復元します");
+
+            RestorePurchaseFiles(userBackup, holdingsBackup);
+
+            try
+            {
+                File.WriteAllText(historyPath, historyBackup);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("【売却履歴復元失敗】" + e.Message);
+                }
+
+            return false;
+        }
+
+        UpdateAllTexts();
+
+        Debug.Log(
+            $"【売却成功】{normalized} {sellQuantity}株 / " +
+            $"単価:{executionPrice:N0}円 / " +
+            $"売却額:{proceeds:N0}円 / " +
+            $"損益:{realizedProfit:N0}円"
+        );
+
+        return true;
+
+        }
+
+        private bool SaveTradeHistory(TradeHistoryItemData trade)
+        {
+        string path = Path.Combine(
+            Application.streamingAssetsPath,
+            "trade_history.json"
+        );
+
+        try
+        {
+            if (!File.Exists(path))
+            {
+                Debug.LogError("【取引履歴保存失敗】ファイルがありません");
+                return false;
+            }
+
+            string json = File.ReadAllText(path);
+
+            TradeHistoryData history =
+                JsonUtility.FromJson<TradeHistoryData>(json);
+
+            if (history == null || history.trades == null)
+            {
+                Debug.LogError("【取引履歴保存失敗】JSONが不正です");
+                return false;
+            }
+
+            var trades = new System.Collections.Generic.List<TradeHistoryItemData>(
+                history.trades
+            );
+
+            trades.Add(trade);
+            history.trades = trades.ToArray();
+
+            File.WriteAllText(
+                path,
+                JsonUtility.ToJson(history, true)
+            );
+
+                Debug.Log("【取引履歴保存成功】保存先：" + path);
+                return true;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("【取引履歴保存エラー】" + e.Message);
+                return false;
+            }
+        }
+    }
