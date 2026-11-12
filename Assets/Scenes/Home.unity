@@ -459,7 +459,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 69395708}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 852226848}
+        m_TargetAssemblyTypeName: SceneChanger, Assembly-CSharp
+        m_MethodName: ChangeScene
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: LearnScene
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &69395708
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3414,7 +3426,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 813300684}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 852226848}
+        m_TargetAssemblyTypeName: SceneChanger, Assembly-CSharp
+        m_MethodName: ChangeScene
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: GachaScene
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &813300684
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6083,7 +6107,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1370169940}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 852226848}
+        m_TargetAssemblyTypeName: SceneChanger, Assembly-CSharp
+        m_MethodName: ChangeScene
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: Home
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1370169940
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7710,7 +7746,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1713166587}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 852226848}
+        m_TargetAssemblyTypeName: SceneChanger, Assembly-CSharp
+        m_MethodName: ChangeScene
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: UserScene
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1713166587
 MonoBehaviour:
   m_ObjectHideFlags: 0
