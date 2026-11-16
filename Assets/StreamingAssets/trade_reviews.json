@@ -1,10 +1,16 @@
 {
-  "reviews": [
-    {
-      "tradeId": "dcaddd07-742c-4302-84ea-00c96d0e7bfa",
-      "reflection": "売却タイミングの判断が遅れた。",
-      "aiFeedback": "",
-      "updatedAt": "2026-11-15 12:00:00"
-    }
-  ]
+    "reviews": [
+        {
+            "tradeId": "dcaddd07-742c-4302-84ea-00c96d0e7bfa",
+            "reflection": "売却タイミングの判断が遅れた。",
+            "aiFeedback": "",
+            "updatedAt": "2026-11-15 12:00:00"
+        },
+        {
+            "tradeId": "1a958a4b-32bb-4c8a-b01a-45600c3a033a",
+            "reflection": "テストテスト",
+            "aiFeedback": "",
+            "updatedAt": "2026-11-16 17:11:58"
+        }
+    ]
 }

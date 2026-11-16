@@ -11,6 +11,9 @@ public class TradeHistoryListUI : MonoBehaviour
     [SerializeField] private TradeDetailUI tradeDetailUI;
     [SerializeField] private TradeChartController tradeChartController;
 
+    [Header("振り返り設定")]
+    [SerializeField] private TradeReflectionManager tradeReflectionManager;
+
     [Header("JSON設定")]
     [SerializeField] private string fileName = "trade_history.json";
 
@@ -34,6 +37,23 @@ public class TradeHistoryListUI : MonoBehaviour
         public TradeData[] trades;
     }
 
+    private void Awake()
+    {
+        // Inspectorで未設定でも自動取得
+        if (tradeReflectionManager == null)
+        {
+            tradeReflectionManager =
+                GetComponent<TradeReflectionManager>();
+        }
+
+        if (tradeReflectionManager == null)
+        {
+            Debug.LogWarning(
+                "【取引履歴】TradeReflectionManagerが見つかりません"
+            );
+        }
+    }
+
     private void OnEnable()
     {
         RefreshHistory();
@@ -43,7 +63,9 @@ public class TradeHistoryListUI : MonoBehaviour
     {
         if (content == null || itemPrefab == null)
         {
-            Debug.LogError("【取引履歴】UI参照が未設定です");
+            Debug.LogError(
+                "【取引履歴】UI参照が未設定です"
+            );
             return;
         }
 
@@ -75,13 +97,13 @@ public class TradeHistoryListUI : MonoBehaviour
                 return;
             }
 
-            // 古い表示を削除
+            // 古い取引履歴を削除
             foreach (Transform child in content)
             {
                 Destroy(child.gameObject);
             }
 
-            // 新しい取引から表示
+            // 新しい取引から順番に表示
             for (int i = history.trades.Length - 1; i >= 0; i--)
             {
                 TradeData trade = history.trades[i];
@@ -106,12 +128,26 @@ public class TradeHistoryListUI : MonoBehaviour
                 {
                     item.button.onClick.AddListener(() =>
                     {
+                        // 取引IDを使って振り返りを読み込む
+                        if (tradeReflectionManager != null)
+                        {
+                            tradeReflectionManager.SelectTrade(
+                                trade.id,
+                                trade.ticker,
+                                trade.dateTime,
+                                trade.type,
+                                trade.quantity,
+                                trade.price
+                            );
+                        }
+
                         // 実現損益を更新
                         if (tradeDetailUI != null)
                         {
                             tradeDetailUI.SetProfit(profit);
                         }
 
+                        // グラフ表示
                         if (tradeChartController != null)
                         {
                             DateTime startDate;
@@ -126,7 +162,7 @@ public class TradeHistoryListUI : MonoBehaviour
 
                             if (found)
                             {
-                                // 取引履歴をグラフ側に渡す
+                                // 売買マーカーをグラフに渡す
                                 SendTradeMarkers(
                                     history.trades,
                                     selectedIndex,
@@ -135,7 +171,6 @@ public class TradeHistoryListUI : MonoBehaviour
                                 );
 
                                 // 取引開始日の7日前から取得
-                                // 休場日でも過去の株価を表示する
                                 string start =
                                     startDate.AddDays(-7)
                                     .ToString("yyyy-MM-dd");
@@ -186,7 +221,7 @@ public class TradeHistoryListUI : MonoBehaviour
         if (tradeChartController == null)
             return;
 
-        // 前回の取引マーカーを削除して重複を防止
+        // 前回の取引マーカーを削除
         tradeChartController.ClearTradeMarkers();
 
         string ticker = trades[selectedIndex].ticker;
@@ -206,7 +241,7 @@ public class TradeHistoryListUI : MonoBehaviour
                 continue;
             }
 
-            // 選択した保有期間内の取引だけを対象にする
+            // 選択した保有期間内の取引のみ表示
             if (tradeDate < startDate ||
                 tradeDate > endDate)
             {
@@ -222,7 +257,7 @@ public class TradeHistoryListUI : MonoBehaviour
         }
     }
 
-    // 選択した取引が属する保有期間を取得
+    // 選択した取引の保有期間を取得
     private bool TryGetHoldingPeriod(
         TradeData[] trades,
         int selectedIndex,
@@ -275,7 +310,7 @@ public class TradeHistoryListUI : MonoBehaviour
                 return false;
             }
 
-            // 選択した取引の保有開始日を記録
+            // 選択した取引の保有開始日
             if (i == selectedIndex)
             {
                 startDate = DateTime.Parse(
