@@ -1,324 +1,334 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using System.Collections.Generic;
 
 public class StockChartRenderer : MonoBehaviour
 {
-    [Header("ÉOÉâÉt")]
+    [Header("„Ç∞„É©„Éï")]
     public float lineThickness = 4f;
     public Color lineColor = new Color(0.45f, 0.30f, 0.85f, 1f);
 
-    [Header("ÉcÅ[ÉãÉ`ÉbÉv")]
+    [Header("„ÉÑ„Éº„É´„ÉÅ„ÉÉ„Éó")]
     public GameObject chartTooltip;
     public TMP_Text tooltipText;
 
-    private List<GameObject> chartObjects = new List<GameObject>();
+    [Header("Êó•‰ªòË°®Á§∫")]
+    [SerializeField] private RectTransform dateLabelLayer;
+    [SerializeField] private TMP_FontAsset dateLabelFont;
+    [SerializeField] private float dateFontSize = 20f;
+    [SerializeField] private int maxDateLabels = 4;
 
+    [Header("ÂèñÂºï„Éû„Éº„Ç´„Éº„Å®Á∑ö")]
+    [SerializeField] private RectTransform tradeMarkerLayer;
+    [SerializeField] private Color tradeLineColor = new Color(0.45f, 0.30f, 0.85f, 1f);
+    [SerializeField] private Color bridgeColor = new Color(0.45f, 0.30f, 0.85f, 0.65f);
 
-    // =====================================
-    // ÉOÉâÉtÇï`âÊ
-    // =====================================
+    [Serializable]
+    public class TradeChartPoint
+    {
+        public DateTime dateTime;
+        public float price;
+        public bool isTrade;
+        public string tradeType;
+    }
+
+    private readonly List<TradeChartPoint> tradeChartPoints = new List<TradeChartPoint>();
+    private readonly List<GameObject> chartObjects = new List<GameObject>();
+    private readonly List<GameObject> dateObjects = new List<GameObject>();
+    private HistoryItem[] currentBars;
+    private float minPrice;
+    private float maxPrice;
+
+    // Market history occupies the first part of the same plot; transaction times are
+    // magnified in the remaining part to keep minute-apart markers distinguishable.
+    private const float MarketEndX = 0.62f;
+    private const float TradeStartX = 0.70f;
+    private const float TradeEndX = 0.94f;
+
+    public RectTransform ChartRect => GetComponent<RectTransform>();
+    public bool HasChartData => currentBars != null && currentBars.Length >= 2;
+
+    public void SetTradeChartPoints(IEnumerable<TradeChartPoint> points)
+    {
+        tradeChartPoints.Clear();
+        if (points != null)
+        {
+            foreach (TradeChartPoint point in points)
+            {
+                if (point != null && !float.IsNaN(point.price) && !float.IsInfinity(point.price))
+                    tradeChartPoints.Add(point);
+            }
+            tradeChartPoints.Sort((a, b) => a.dateTime.CompareTo(b.dateTime));
+        }
+        Debug.Log("„Äê„Ç∞„É©„ÉïÂèñÂºï„Éá„Éº„Çø„Äë" + tradeChartPoints.Count + "‰ª∂„ÇíÁôªÈå≤");
+    }
 
     public void DrawChart(HistoryItem[] bars)
     {
         ClearChart();
-
         if (bars == null || bars.Length < 2)
         {
-            Debug.LogWarning("ÉOÉâÉtópÇÃÉfÅ[É^Ç™ë´ÇËÇ‹ÇπÇÒ");
+            Debug.LogWarning("„ÄêÊ†™‰æ°„Ç∞„É©„Éï„ÄëÊ†™‰æ°Â±•Ê≠¥„Åå‰∏çË∂≥„Åó„Å¶„ÅÑ„Åæ„Åô");
+            return;
+        }
+        // API„ÅÆËøîÂç¥È†Ü„Å´‰æùÂ≠ò„Åõ„Åö„ÄÅÊó•ÊôÇÈ†Ü„Å´‰∏¶„Åπ„Çã„ÄÇ
+        // „Éá„É¢ÂèñÂºï„Çà„ÇäÂæå„ÅÆÂ∏ÇÂ†¥„Éá„Éº„Çø„ÇíÂèñÂºï„Çà„ÇäÂ∑¶„Å´Êèè„Åã„Å™„ÅÑ„ÄÇ
+        List<HistoryItem> ordered = new List<HistoryItem>();
+        foreach (HistoryItem bar in bars)
+        {
+            if (bar == null) continue;
+            if (!DateTime.TryParse(bar.date, out DateTime barTime)) continue;
+            if (tradeChartPoints.Count > 0 &&
+                barTime >= tradeChartPoints[0].dateTime) continue;
+            ordered.Add(bar);
+        }
+        ordered.Sort((a, b) => DateTime.Parse(a.date).CompareTo(DateTime.Parse(b.date)));
+        if (ordered.Count < 2)
+        {
+            Debug.LogWarning("„ÄêÊ†™‰æ°„Ç∞„É©„Éï„ÄëÂèñÂºïÂâç„ÅÆÂ∏ÇÂ†¥„Éá„Éº„Çø„Åå2‰ª∂Êú™Ê∫Ä„Åß„Åô");
+            return;
+        }
+        bars = ordered.ToArray();
+        currentBars = bars;
+        float width = ChartRect.rect.width;
+        float height = ChartRect.rect.height;
+        if (width <= 0f || height <= 0f)
+        {
+            Debug.LogWarning("„ÄêÊ†™‰æ°„Ç∞„É©„Éï„ÄëCharArea„ÅÆÂπÖ„Åæ„Åü„ÅØÈ´ò„Åï„Åå0„Åß„Åô");
             return;
         }
 
-        RectTransform chartRect = GetComponent<RectTransform>();
-
-        float width = chartRect.rect.width;
-        float height = chartRect.rect.height;
-
-        float minPrice = bars[0].close;
-        float maxPrice = bars[0].close;
-
-        foreach (HistoryItem item in bars)
+        minPrice = bars[0].close;
+        maxPrice = bars[0].close;
+        foreach (HistoryItem bar in bars)
         {
-            if (item.close < minPrice)
-                minPrice = item.close;
-
-            if (item.close > maxPrice)
-                maxPrice = item.close;
+            minPrice = Mathf.Min(minPrice, bar.close);
+            maxPrice = Mathf.Max(maxPrice, bar.close);
         }
-
-        if (Mathf.Approximately(minPrice, maxPrice))
+        foreach (TradeChartPoint trade in tradeChartPoints)
         {
-            maxPrice += 1f;
-            minPrice -= 1f;
+            minPrice = Mathf.Min(minPrice, trade.price);
+            maxPrice = Mathf.Max(maxPrice, trade.price);
         }
+        float range = maxPrice - minPrice;
+        if (range < 0.01f) range = 2f;
+        float padding = range * 0.12f;
+        minPrice -= padding;
+        maxPrice += padding;
 
-
-        // =====================================
-        // äeì˙ÇÃà íuÇåvéZ
-        // =====================================
-
-        Vector2[] points = new Vector2[bars.Length];
-
+        bool hasTrades = tradeChartPoints.Count > 0;
+        float marketRight = hasTrades ? MarketEndX : 1f;
+        Vector2[] marketPoints = new Vector2[bars.Length];
         for (int i = 0; i < bars.Length; i++)
         {
-            float x =
-                ((float)i / (bars.Length - 1)) * width;
-
-            float y =
-                Mathf.InverseLerp(
-                    minPrice,
-                    maxPrice,
-                    bars[i].close
-                ) * height;
-
-            points[i] = new Vector2(x, y);
+            float nx = (float)i / (bars.Length - 1) * marketRight;
+            float ny = Mathf.InverseLerp(minPrice, maxPrice, bars[i].close);
+            marketPoints[i] = new Vector2(nx * width, ny * height);
         }
+        for (int i = 0; i < marketPoints.Length - 1; i++)
+            CreateLine(transform, marketPoints[i], marketPoints[i + 1], lineColor, "ChartLine");
+        for (int i = 0; i < marketPoints.Length; i++)
+            CreateHoverPoint(marketPoints[i], bars[i]);
 
-
-        // =====================================
-        // ê‹ÇÍê¸Çï`Ç≠
-        // =====================================
-
-        for (int i = 0; i < points.Length - 1; i++)
+        if (hasTrades)
         {
-            CreateLine(
-                points[i],
-                points[i + 1]
-            );
+            // The dashed segment indicates a gap in market data. It is NOT a
+            // claimed market-price movement during the closed session.
+            Vector2 firstTrade = TradePosition(0, width, height);
+            CreateDashedLine(transform, marketPoints[marketPoints.Length - 1], firstTrade, bridgeColor);
+
+            // Draw the actual recorded demo execution prices in the SAME plot.
+            // Using the ChartRect as parent keeps coordinates identical to the
+            // existing market lines and to normalized trade-marker coordinates.
+            for (int i = 0; i < tradeChartPoints.Count - 1; i++)
+            {
+                Vector2 a = TradePosition(i, width, height);
+                Vector2 b = TradePosition(i + 1, width, height);
+                CreateLine(transform, a, b, tradeLineColor, "DemoTradeLine");
+            }
         }
 
-
-        // =====================================
-        // äeì˙ÇÃìßñæÇ»ìñÇΩÇËîªíËÇçÏÇÈ
-        // =====================================
-
-        for (int i = 0; i < points.Length; i++)
-        {
-            CreateHoverPoint(
-                points[i],
-                bars[i]
-            );
-        }
-
-
-        // ç≈èâÇÕêÅÇ´èoÇµÇîÒï\é¶
+        DrawDateLabels(bars);
+        // MarkerLayer is a full-stretch child of ChartRect. Bring it above all lines.
+        RectTransform layer = tradeMarkerLayer != null
+            ? tradeMarkerLayer : transform.Find("TradeMarkerLayer") as RectTransform;
+        if (layer != null) layer.SetAsLastSibling();
         HideTooltip();
-
-        Debug.Log(
-            "ÉOÉâÉtï`âÊê¨å˜ÅI ì_êîÅF" +
-            bars.Length
-        );
+        Debug.Log("„ÄêÁµ±Âêà„Ç∞„É©„ÉïÊèèÁîªÂÆå‰∫Ü„ÄëÂ∏ÇÂ†¥Ôºö" + bars.Length + "‰ª∂ / „Éá„É¢ÂèñÂºïÔºö" + tradeChartPoints.Count + "‰ª∂");
     }
 
-
-    // =====================================
-    // ê‹ÇÍê¸ÇçÏÇÈ
-    // =====================================
-
-    private void CreateLine(
-        Vector2 pointA,
-        Vector2 pointB
-    )
+    private Vector2 TradePosition(int index, float width, float height)
     {
-        GameObject lineObject =
-            new GameObject(
-                "ChartLine",
-                typeof(Image)
-            );
-
-        lineObject.transform.SetParent(
-            transform,
-            false
-        );
-
-        Image image =
-            lineObject.GetComponent<Image>();
-
-        image.color = lineColor;
-        image.raycastTarget = false;
-
-
-        RectTransform rect =
-            lineObject.GetComponent<RectTransform>();
-
-        Vector2 direction =
-            pointB - pointA;
-
-        float distance =
-            direction.magnitude;
-
-
-        rect.anchorMin = new Vector2(0, 0);
-        rect.anchorMax = new Vector2(0, 0);
-        rect.pivot = new Vector2(0, 0.5f);
-
-        rect.anchoredPosition = pointA;
-
-        rect.sizeDelta =
-            new Vector2(
-                distance,
-                lineThickness
-            );
-
-
-        float angle =
-            Mathf.Atan2(
-                direction.y,
-                direction.x
-            ) * Mathf.Rad2Deg;
-
-        rect.localEulerAngles =
-            new Vector3(
-                0,
-                0,
-                angle
-            );
-
-
-        chartObjects.Add(lineObject);
-    }
-
-
-    // =====================================
-    // ìßñæÇ»ÉzÉoÅ[îªíËÇçÏÇÈ
-    // =====================================
-
-    private void CreateHoverPoint(
-        Vector2 position,
-        HistoryItem item
-    )
-    {
-        GameObject hoverObject =
-            new GameObject(
-                "HoverPoint",
-                typeof(Image),
-                typeof(ChartHoverPoint)
-            );
-
-        hoverObject.transform.SetParent(
-            transform,
-            false
-        );
-
-
-        Image image =
-            hoverObject.GetComponent<Image>();
-
-        // å©Ç¶Ç»Ç¢Ç™RaycastÇÕéÛÇØéÊÇÍÇÈ
-        image.color =
-            new Color(1f, 1f, 1f, 0f);
-
-        image.raycastTarget = true;
-
-
-        RectTransform rect =
-            hoverObject.GetComponent<RectTransform>();
-
-        rect.anchorMin = new Vector2(0, 0);
-        rect.anchorMax = new Vector2(0, 0);
-        rect.pivot = new Vector2(0.5f, 0.5f);
-
-        rect.anchoredPosition = position;
-
-        // ÉJÅ[É\ÉãÇçáÇÌÇπÇ‚Ç∑Ç¢ëÂÇ´Ç≥
-        rect.sizeDelta =
-            new Vector2(30f, 50f);
-
-
-        ChartHoverPoint hover =
-            hoverObject.GetComponent<ChartHoverPoint>();
-
-        hover.Setup(
-            this,
-            item.date,
-            item.close
-        );
-
-
-        chartObjects.Add(hoverObject);
-    }
-
-
-    // =====================================
-    // êÅÇ´èoÇµÇï\é¶
-    // =====================================
-
-    public void ShowTooltip(
-        string date,
-        float closePrice,
-        Vector3 worldPosition
-    )
-    {
-        if (chartTooltip == null ||
-            tooltipText == null)
+        float t = 0.5f;
+        if (tradeChartPoints.Count > 1)
         {
+            DateTime first = tradeChartPoints[0].dateTime;
+            DateTime last = tradeChartPoints[tradeChartPoints.Count - 1].dateTime;
+            double duration = (last - first).TotalSeconds;
+            t = duration > 0.0
+                ? (float)((tradeChartPoints[index].dateTime - first).TotalSeconds / duration)
+                : (float)index / (tradeChartPoints.Count - 1);
+        }
+        float x = Mathf.Lerp(TradeStartX, TradeEndX, Mathf.Clamp01(t));
+        float y = Mathf.InverseLerp(minPrice, maxPrice, tradeChartPoints[index].price);
+        return new Vector2(x * width, y * height);
+    }
+
+    public bool TryGetTradePosition(string tradeDateTime, float tradePrice, out Vector2 normalizedPosition)
+    {
+        normalizedPosition = Vector2.zero;
+        if (!HasChartData || tradeChartPoints.Count == 0) return false;
+        if (!DateTime.TryParse(tradeDateTime, out DateTime requested)) return false;
+        float width = ChartRect.rect.width;
+        float height = ChartRect.rect.height;
+        if (width <= 0f || height <= 0f) return false;
+        for (int i = 0; i < tradeChartPoints.Count; i++)
+        {
+            TradeChartPoint trade = tradeChartPoints[i];
+            if (trade.dateTime == requested && Mathf.Abs(trade.price - tradePrice) < 0.01f)
+            {
+                Vector2 point = TradePosition(i, width, height);
+                normalizedPosition = new Vector2(point.x / width, point.y / height);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void DrawDateLabels(HistoryItem[] bars)
+    {
+        if (dateLabelLayer == null)
+        {
+            Debug.LogWarning("„ÄêÊó•‰ªòË°®Á§∫„ÄëDate Label Layer„ÅåÊú™Ë®≠ÂÆö„Åß„Åô");
             return;
         }
-
-
-        chartTooltip.SetActive(true);
-
-
-        // 2026-09-18 Å® 9åé18ì˙
-        string displayDate = date;
-
-        System.DateTime parsedDate;
-
-        if (System.DateTime.TryParse(
-            date,
-            out parsedDate
-        ))
+        int count = Mathf.Min(Mathf.Max(2, maxDateLabels), bars.Length);
+        // Êó•ÊôÇ„É©„Éô„É´„ÅÆÈáç„Å™„Çä„ÇíÊäë„Åà„Çã„Åü„ÇÅ„ÄÅÂèñÂºï„ÅÇ„Çä„ÅÆÂ†¥Âêà„ÅØÂ∏ÇÂ†¥ÂÅ¥„ÇíÊúÄÂ§ß3‰ª∂„Å´„ÄÇ
+        if (tradeChartPoints.Count > 0) count = Mathf.Min(count, 3);
+        HashSet<int> indices = new HashSet<int>();
+        for (int i = 0; i < count; i++)
+            indices.Add(Mathf.RoundToInt((float)i / (count - 1) * (bars.Length - 1)));
+        List<int> sorted = new List<int>(indices);
+        sorted.Sort();
+        float right = tradeChartPoints.Count > 0 ? MarketEndX : 1f;
+        foreach (int i in sorted)
         {
-            displayDate =
-                parsedDate.Month +
-                "åé" +
-                parsedDate.Day +
-                "ì˙";
+            string value = DateTime.TryParse(bars[i].date, out DateTime parsed)
+                ? (parsed.TimeOfDay == TimeSpan.Zero ? parsed.ToString("MM/dd") : parsed.ToString("MM/dd HH:mm"))
+                : bars[i].date;
+            AddDateLabel("MarketDate_" + i, value, (float)i / (bars.Length - 1) * right, 60f);
         }
-
-
-        tooltipText.text =
-            displayDate +
-            "\nèIíl " +
-            closePrice.ToString("N0") +
-            "â~";
-
-
-        // ÉfÅ[É^ì_ÇÃè≠Çµè„Ç…ï\é¶
-        chartTooltip.transform.position =
-            worldPosition +
-            new Vector3(0f, -18f, 0f);
+        if (tradeChartPoints.Count > 0)
+        {
+            // The date/time region is magnified. Full timestamp remains in marker hover.
+            AddDateLabel("TradeStartDate", tradeChartPoints[0].dateTime.ToString("MM/dd HH:mm"), TradeStartX, 85f);
+            if (tradeChartPoints.Count > 1)
+                AddDateLabel("TradeEndDate", tradeChartPoints[tradeChartPoints.Count - 1].dateTime.ToString("HH:mm"), TradeEndX, 55f);
+        }
+        Debug.Log("„ÄêÊó•‰ªò„É©„Éô„É´ÊèèÁîªÊàêÂäü„Äë" + dateObjects.Count + "‰ª∂");
     }
 
+    private void AddDateLabel(string name, string value, float normalizedX, float labelWidth)
+    {
+        GameObject obj = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI));
+        obj.transform.SetParent(dateLabelLayer, false);
+        RectTransform rect = obj.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(normalizedX, 1f);
+        rect.anchorMax = rect.anchorMin;
+        rect.pivot = new Vector2(0.5f, 1f);
+        rect.anchoredPosition = Vector2.zero;
+        rect.sizeDelta = new Vector2(labelWidth, 22f);
+        TextMeshProUGUI label = obj.GetComponent<TextMeshProUGUI>();
+        if (dateLabelFont != null) label.font = dateLabelFont;
+        label.fontSize = Mathf.Min(dateFontSize, 20f);
+        label.color = Color.black;
+        label.alignment = TextAlignmentOptions.Center;
+        label.textWrappingMode = TextWrappingModes.NoWrap;
+        label.raycastTarget = false;
+        label.overflowMode = TextOverflowModes.Overflow;
+        label.text = value;
+        dateObjects.Add(obj);
+    }
 
-    // =====================================
-    // êÅÇ´èoÇµÇîÒï\é¶
-    // =====================================
+    private void CreateDashedLine(Transform parent, Vector2 a, Vector2 b, Color color)
+    {
+        Vector2 delta = b - a;
+        float length = delta.magnitude;
+        if (length < 0.01f) return;
+        const float dash = 9f;
+        const float gap = 6f;
+        for (float offset = 0f; offset < length; offset += dash + gap)
+        {
+            float end = Mathf.Min(offset + dash, length);
+            Vector2 startPoint = a + delta * (offset / length);
+            Vector2 endPoint = a + delta * (end / length);
+            CreateLine(parent, startPoint, endPoint, color, "MarketClosedDash");
+        }
+    }
+
+    private void CreateLine(Transform parent, Vector2 pointA, Vector2 pointB, Color color, string objectName)
+    {
+        Vector2 direction = pointB - pointA;
+        if (direction.sqrMagnitude < 0.0001f) return;
+        GameObject obj = new GameObject(objectName, typeof(RectTransform), typeof(Image));
+        obj.transform.SetParent(parent, false);
+        RectTransform rect = obj.GetComponent<RectTransform>();
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.zero;
+        rect.pivot = new Vector2(0f, 0.5f);
+        rect.anchoredPosition = pointA;
+        rect.sizeDelta = new Vector2(direction.magnitude, lineThickness);
+        rect.localEulerAngles = new Vector3(0f, 0f, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg);
+        Image image = obj.GetComponent<Image>();
+        image.color = color;
+        image.raycastTarget = false;
+        chartObjects.Add(obj);
+    }
+
+    private void CreateHoverPoint(Vector2 position, HistoryItem item)
+    {
+        GameObject obj = new GameObject("HoverPoint", typeof(RectTransform), typeof(Image), typeof(ChartHoverPoint));
+        obj.transform.SetParent(transform, false);
+        RectTransform rect = obj.GetComponent<RectTransform>();
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.zero;
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = position;
+        rect.sizeDelta = new Vector2(30f, 50f);
+        Image image = obj.GetComponent<Image>();
+        image.color = new Color(1f, 1f, 1f, 0f);
+        image.raycastTarget = true;
+        obj.GetComponent<ChartHoverPoint>().Setup(this, item.date, item.close);
+        chartObjects.Add(obj);
+    }
+
+    public void ShowTooltip(string date, float closePrice, Vector3 worldPosition)
+    {
+        if (chartTooltip == null || tooltipText == null) return;
+        chartTooltip.SetActive(true);
+        string displayDate = date;
+        if (DateTime.TryParse(date, out DateTime parsed))
+            displayDate = parsed.ToString("MM/dd HH:mm");
+        tooltipText.text = displayDate + "\nÁµÇÂÄ§ " + closePrice.ToString("N0") + "ÂÜÜ";
+        chartTooltip.transform.position = worldPosition + new Vector3(0f, -18f, 0f);
+    }
 
     public void HideTooltip()
     {
-        if (chartTooltip != null)
-        {
-            chartTooltip.SetActive(false);
-        }
+        if (chartTooltip != null) chartTooltip.SetActive(false);
     }
-
-
-    // =====================================
-    // å√Ç¢ÉOÉâÉtÇçÌèú
-    // =====================================
 
     public void ClearChart()
     {
         foreach (GameObject obj in chartObjects)
-        {
-            if (obj != null)
-            {
-                Destroy(obj);
-            }
-        }
-
+            if (obj != null) Destroy(obj);
         chartObjects.Clear();
+        foreach (GameObject obj in dateObjects)
+            if (obj != null) Destroy(obj);
+        dateObjects.Clear();
+        currentBars = null;
+        // Do not clear tradeChartPoints: they are supplied before DrawChart().
     }
 }
