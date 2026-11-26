@@ -43,6 +43,127 @@
             "price": 3418,
             "averagePurchasePrice": 3418.0,
             "realizedProfit": 0.0
+        },
+        {
+            "id": "83d1417d-8731-4333-b12e-dcffc80dd534",
+            "ticker": "7203.T",
+            "stockName": "トヨタ自動車（7203）",
+            "type": "buy",
+            "dateTime": "2026-11-16 22:08:33",
+            "quantity": 100,
+            "price": 3428,
+            "averagePurchasePrice": 3428.0,
+            "realizedProfit": 0.0
+        },
+        {
+            "id": "890544b5-40f0-4c3c-aca5-6c62c16c0347",
+            "ticker": "7203.T",
+            "stockName": "トヨタ自動車（7203）",
+            "type": "buy",
+            "dateTime": "2026-11-16 22:08:55",
+            "quantity": 100,
+            "price": 3428,
+            "averagePurchasePrice": 3428.0,
+            "realizedProfit": 0.0
+        },
+        {
+            "id": "c21b79bc-f484-4c26-9f16-9cf33f422f06",
+            "ticker": "7203.T",
+            "stockName": "トヨタ自動車（7203）",
+            "type": "buy",
+            "dateTime": "2026-11-16 22:08:56",
+            "quantity": 100,
+            "price": 3428,
+            "averagePurchasePrice": 3428.0,
+            "realizedProfit": 0.0
+        },
+        {
+            "id": "16753c09-41a2-42d3-90b6-4fafe24e7caa",
+            "ticker": "7203.T",
+            "stockName": "トヨタ自動車（7203）",
+            "type": "buy",
+            "dateTime": "2026-11-16 22:08:58",
+            "quantity": 100,
+            "price": 3428,
+            "averagePurchasePrice": 3428.0,
+            "realizedProfit": 0.0
+        },
+        {
+            "id": "1c758ade-6d93-4268-9787-f93d6d410292",
+            "ticker": "7203.T",
+            "stockName": "トヨタ自動車（7203）",
+            "type": "buy",
+            "dateTime": "2026-11-16 22:09:00",
+            "quantity": 100,
+            "price": 3428,
+            "averagePurchasePrice": 3428.0,
+            "realizedProfit": 0.0
+        },
+        {
+            "id": "113cb01b-b121-44bc-b2cd-da0da23ce6d0",
+            "ticker": "7203.T",
+            "stockName": "トヨタ自動車（7203）",
+            "type": "buy",
+            "dateTime": "2026-11-16 22:09:00",
+            "quantity": 100,
+            "price": 3428,
+            "averagePurchasePrice": 3428.0,
+            "realizedProfit": 0.0
+        },
+        {
+            "id": "66d1f30c-1fab-42b2-bc14-a0536f5c204d",
+            "ticker": "7203.T",
+            "stockName": "トヨタ自動車（7203）",
+            "type": "buy",
+            "dateTime": "2026-11-16 22:09:01",
+            "quantity": 100,
+            "price": 3428,
+            "averagePurchasePrice": 3428.0,
+            "realizedProfit": 0.0
+        },
+        {
+            "id": "951fad12-af2f-4887-8a1f-451e9ef9ce6a",
+            "ticker": "7203.T",
+            "stockName": "トヨタ自動車（7203）",
+            "type": "buy",
+            "dateTime": "2026-11-16 22:09:01",
+            "quantity": 100,
+            "price": 3428,
+            "averagePurchasePrice": 3428.0,
+            "realizedProfit": 0.0
+        },
+        {
+            "id": "44a881c8-7bf6-411e-a3cc-389ca0cb48f5",
+            "ticker": "7203.T",
+            "stockName": "トヨタ自動車（7203）",
+            "type": "buy",
+            "dateTime": "2026-11-16 22:09:01",
+            "quantity": 100,
+            "price": 3428,
+            "averagePurchasePrice": 3428.0,
+            "realizedProfit": 0.0
+        },
+        {
+            "id": "4808add8-2d61-4263-872f-c5696f39ea1f",
+            "ticker": "7203.T",
+            "stockName": "トヨタ自動車（7203）",
+            "type": "buy",
+            "dateTime": "2026-11-16 22:09:04",
+            "quantity": 100,
+            "price": 3428,
+            "averagePurchasePrice": 3428.0,
+            "realizedProfit": 0.0
+        },
+        {
+            "id": "eeac1f26-43bc-4902-a2c3-c6405be5ea2b",
+            "ticker": "7203.T",
+            "stockName": "トヨタ自動車（7203）",
+            "type": "sell",
+            "dateTime": "2026-11-16 22:10:01",
+            "quantity": 1000,
+            "price": 3428,
+            "averagePurchasePrice": 3428.0,
+            "realizedProfit": 0.0
         }
     ]
 }
