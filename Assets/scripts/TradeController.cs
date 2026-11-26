@@ -993,6 +993,41 @@ public class TradeHistoryData
         }
 
         float averageCost = target.averagePurchasePrice;
+        double realizedProfit =
+            (executionPrice - (double)averageCost) * sellQuantity;
+
+        // プラスの確定利益のみ推し活コインに変換（小数点以下は切り捨て）。
+        // 保存前に上限を検証し、売却だけ成功してコインが付かない状態を防ぐ。
+        UserData userBeforeSale;
+        try
+        {
+            userBeforeSale = JsonUtility.FromJson<UserData>(userBackup);
+            if (userBeforeSale == null || userBeforeSale.oshiCoins < 0)
+                throw new Exception("user.json の推し活コインが不正です");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("【売却失敗】推し活コイン確認エラー: " + e.Message);
+            return false;
+        }
+
+        if (double.IsNaN(realizedProfit) || double.IsInfinity(realizedProfit) ||
+            realizedProfit > int.MaxValue)
+        {
+            Debug.LogError("【売却失敗】確定利益が不正、または上限超過です");
+            return false;
+        }
+
+        int earnedOshiCoins = realizedProfit > 0
+            ? (int)Math.Floor(realizedProfit)
+            : 0;
+
+        if ((long)userBeforeSale.oshiCoins + earnedOshiCoins > int.MaxValue)
+        {
+            Debug.LogError("【売却失敗】推し活コインがintの上限を超えます");
+            return false;
+        }
+
         target.quantity -= sellQuantity;
         if (target.quantity == 0)
         {
@@ -1007,9 +1042,6 @@ public class TradeHistoryData
             RestorePurchaseFiles(userBackup, holdingsBackup);
             return false;
         }
-
-        double realizedProfit =
-        (executionPrice - (double)averageCost) * sellQuantity;
 
         TradeHistoryItemData trade = new TradeHistoryItemData
         {
@@ -1042,7 +1074,25 @@ public class TradeHistoryData
             return false;
         }
 
+        // 履歴保存後に一度だけ推し活コインを加算する。
+        // 保存に失敗した場合は売却・保有株・履歴を元に戻す。
+        if (earnedOshiCoins > 0 && !AddOshiCoins(earnedOshiCoins))
+        {
+            Debug.LogError("【売却失敗】推し活コイン保存失敗のため取引を復元します");
+            RestorePurchaseFiles(userBackup, holdingsBackup);
+            try
+            {
+                File.WriteAllText(historyPath, historyBackup);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("【売却履歴復元失敗】" + e.Message);
+            }
+            return false;
+        }
+
         UpdateAllTexts();
+        Debug.Log($"【推し活コイン加算】+{earnedOshiCoins:N0} / 損益:{realizedProfit:N0}円");
 
         Debug.Log(
             $"【売却成功】{normalized} {sellQuantity}株 / " +
@@ -1053,6 +1103,37 @@ public class TradeHistoryData
 
         return true;
 
+        }
+
+        // 推し活コインのみ加算。投資コインは現在の値を保持する。
+        private bool AddOshiCoins(int amount)
+        {
+            if (amount <= 0) return true;
+            try
+            {
+                if (!File.Exists(jsonPath))
+                {
+                    Debug.LogError("【推し活コイン保存失敗】user.json がありません");
+                    return false;
+                }
+
+                UserData data = JsonUtility.FromJson<UserData>(File.ReadAllText(jsonPath));
+                if (data == null || data.oshiCoins < 0 ||
+                    (long)data.oshiCoins + amount > int.MaxValue)
+                {
+                    Debug.LogError("【推し活コイン保存失敗】データ不正または上限超過");
+                    return false;
+                }
+
+                data.oshiCoins += amount;
+                File.WriteAllText(jsonPath, JsonUtility.ToJson(data, true));
+                return true;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("【推し活コイン保存エラー】" + e.Message);
+                return false;
+            }
         }
 
         private bool SaveTradeHistory(TradeHistoryItemData trade)

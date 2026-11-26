@@ -1,0 +1,10 @@
+{
+	"Version": 3,
+	"FileReferences": {
+		"Moc": "指揮　四音new.moc3",
+		"Textures": [
+			"指揮　四音new.2048/texture_00.png"
+		],
+		"DisplayInfo": "指揮　四音new.cdi3.json"
+	}
+}
